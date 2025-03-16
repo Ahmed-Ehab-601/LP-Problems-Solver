@@ -1,10 +1,10 @@
 from Solver import Solver  
 from TwoPhase import TwoPhase  
 from Simplex import Simplex
-class LPsolver:
-    def __init__(self, input, Solver): 
-        self.input = input  
-        self.solver = Solver   
+class LPSolver:
+    def __init__(self): 
+        self.input
+        self.solver  
 
     def check_constraints(self):
         

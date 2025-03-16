@@ -27,11 +27,14 @@ tableau = Matrix([
 pivot = tableau[0, 1]  # Pivot element (row 1, col 1)
 
 # Scale entire row without loop
-tableau[0, :] = tableau[0, :] / pivot  
+tableau[0, :] = tableau[0, :]/pivot
 
 for i in range(1, tableau.shape[0]):
     tableau[i, :] = tableau[i, :] - tableau[i, 1] * tableau[0, :]
 
 pprint(tableau)
+
+vector = Matrix([1, 2, 3])
+print(vector)
 
 

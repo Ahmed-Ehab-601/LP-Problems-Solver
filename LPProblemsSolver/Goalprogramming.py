@@ -1,5 +1,5 @@
 from Solver import Solver
-class Goalprogramming(Solver):
+class GoalProgramming(Solver):
     def SetLinearProblem(self):
        pass
     def solve(self):
