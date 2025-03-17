@@ -1,0 +1,16 @@
+from sympy import Matrix   
+def getEntering(self,table:Matrix,row : int,col: int):
+    min_ratio = None
+    index = None
+    cols = table.shape[1]
+    rows = table.shape[0]
+    for i in range(row,rows):
+        if table[i,col] > 0:
+            if min_ratio is not None:
+                if(table[i,cols-1]/table[i,col]) < min_ratio:
+                    min_ratio = table[i,cols-1]/table[i,col]
+                    index = i
+            else:
+                min_ratio = table[i,cols-1]/table[i,col]
+                index = i
+    return index
