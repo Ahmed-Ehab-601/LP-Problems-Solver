@@ -3,7 +3,10 @@ import Input
 from sympy import Matrix,pprint
 class CoreSimplex:
     def __init__(self,LP: LinearProblem=None):
-        self.LP = LinearProblem.LinearProblem()
+        if LP is not None:
+            self.LP = LP
+        else:
+            self.LP = LinearProblem.LinearProblem()
         
     
     def getEntering(self,table:Matrix,max:bool,row : int,known_variables:dict = {}):
