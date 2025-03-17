@@ -4,8 +4,6 @@ from sympy import Matrix,pprint
 class CoreSimplex:
     def __init__(self,LP: LinearProblem=None):
         self.LP = LP
-        
-    
     def getEntering(self,table:Matrix,max:bool,row : int,known_variables:dict = {}):
         z = table[row,:table.shape[1]-1].copy()
         if not max:

@@ -1,4 +1,5 @@
 from sympy import Matrix
+
 class LinearProblem:
     def __init__(self):
         self.n = None # number of variables
@@ -13,6 +14,8 @@ class LinearProblem:
         self.objective_count = 1
         self.known_variables = {}
         self.isGoal = False
+        self.table_cols=None
+        self.table_rows=None  
         
         
             

@@ -1,6 +1,6 @@
 from abc import ABC, abstractmethod
-import CoreSimplex
-import LinearProblem
+from CoreSimplex import CoreSimplex
+from LinearProblem import LinearProblem
 import Input
 class Solver(ABC):
     def __init__(self, input:Input): 
@@ -9,6 +9,7 @@ class Solver(ABC):
         self.coresimplex= CoreSimplex()   
     @abstractmethod
     def solve(self):
+        
         pass
 
     @abstractmethod
