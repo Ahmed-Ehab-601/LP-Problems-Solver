@@ -1,28 +1,26 @@
 from Solver import Solver  
 from TwoPhase import TwoPhase  
 from Simplex import Simplex
+from BigM import BigM
 from Input import Input
 from Constrain import Constrain
 class LPSolver:
     def __init__(self): 
-
-      pass
-        
+      pass 
 
     def check_constraints(self):
-        
-        #for constraint in self.input.constraints:  
-         #   if constraint in ['>=', '=']:  
-          #      method = input("Enter which method to use (bigm, 2phase): ").lower()
+        for constraint in self.input.constraints:  
+           if constraint in ['>=', '=']:  
+               method = input("Enter which method to use (bigm, 2phase): ").lower()
 
-           #     if method == 'bigm':
-            #        return BigM(self.input)  
+               if method == 'bigm':
+                   return BigM(self.input)  
 
-             #   elif method == '2phase':
-              #      return TwoPhase(self.input)  
+               elif method == '2phase':
+                   return TwoPhase(self.input)  
 
-               # else:
-                #    return None  
+               else:
+                   return None  
         pass
     def solve(self) :
        pass
@@ -98,8 +96,6 @@ class LPSolver:
             print(f"  {symbol} -> Index {idx}")
 
         print("\n=== END OF INPUT SUMMARY ===\n")
-
-                    
 
 l=LPSolver()
 l.get_input()
