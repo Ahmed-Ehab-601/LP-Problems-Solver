@@ -5,7 +5,7 @@ import Input
 class Solver(ABC):
     def __init__(self, input:Input): 
         self.input = input
-        self.LP = None
+        self.LP = LinearProblem()
         self.coresimplex= CoreSimplex()   
     @abstractmethod
     def solve(self):
@@ -15,3 +15,4 @@ class Solver(ABC):
     @abstractmethod
     def SetLinearProblem(self):
         pass
+    

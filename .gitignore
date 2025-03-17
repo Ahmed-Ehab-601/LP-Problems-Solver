@@ -8,3 +8,10 @@ LPProblemsSolver/.idea/vcs.xml
 LPProblemsSolver/.idea/vcs.xml
 .DS_Store
 LPProblemsSolver/.idea/vcs.xml
+LPProblemsSolver/__pycache__/CoreSimplex.cpython-312.pyc
+LPProblemsSolver/__pycache__/Input.cpython-312.pyc
+LPProblemsSolver/__pycache__/LinearProblem.cpython-312.pyc
+LPProblemsSolver/__pycache__/LPsolver.cpython-312.pyc
+LPProblemsSolver/__pycache__/Simplex.cpython-312.pyc
+LPProblemsSolver/__pycache__/Solver.cpython-312.pyc
+LPProblemsSolver/__pycache__/TwoPhase.cpython-312.pyc

@@ -1,12 +1,12 @@
 from Solver import Solver  
 from TwoPhase import TwoPhase  
-from Simplex import Simplex
 from BigM import BigM
 from Input import Input
 from Constrain import Constrain
 class LPSolver:
     def __init__(self): 
-      pass 
+      self.input = None
+      self.solver = None 
 
     def check_constraints(self):
         for constraint in self.input.constraints:  
@@ -97,5 +97,5 @@ class LPSolver:
 
         print("\n=== END OF INPUT SUMMARY ===\n")
 
-l=LPSolver()
-l.get_input()
+# l=LPSolver()
+# l.get_input()

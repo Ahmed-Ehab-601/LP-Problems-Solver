@@ -1,7 +1,7 @@
 from Constrain import Constrain
 
 class Input:
-    def __init__(self, n: int, m: int, constraints, zRow, maximize, isGoal,unrestricted,symbol_map):
+    def __init__(self, n: int, m: int, constraints: list, zRow: list, maximize:bool, isGoal:bool,unrestricted:list,symbol_map:dict):
         self.n = n                   
         self.m = m                     
         self.constraints = constraints

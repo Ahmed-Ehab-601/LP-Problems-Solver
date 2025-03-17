@@ -14,6 +14,7 @@ class TwoPhase(Solver):
         self.LP.variables = self.input.symbol_map.copy()
         self.LP.basic_variables = [None] * self.LP.m 
         self.LP.tableau = self.get_table()
+        self.LP.maximize = self.input.maximize
         pprint(self.LP.tableau)
         print(self.LP.basic_variables)
         print(self.atrificalVariables)
@@ -137,5 +138,5 @@ input_data = Input(
     symbol_map={0: "x", 1: "y"}
 )
 
-solver = TwoPhase(input_data)
-solver.SetLinearProblem()
+# solver = TwoPhase(input_data)
+# solver.SetLinearProblem()
