@@ -27,9 +27,15 @@ class TwoPhase(Solver):
         self.coresimplex=CoreSimplex(self.LP)
 
     def solve(self):
+        pprint(self.LP.tableau)
+        print(self.LP.variables)
+        print(self.LP.basic_variables)
+        print(self.LP.non_basic_variables)
+        print(self.atrificalVariables)
         if self.phase1():
             if self.phase2():
                 return
+        #self.printSolution()    
 
     def get_table(self):
         num_artificiale = 0
@@ -98,6 +104,7 @@ class TwoPhase(Solver):
         return m
 
     def phase1(self):
+        #self.coresimplex.DecorateSteps(self.LP)
         for i in range(self.LP.m):
             factor = self.LP.tableau[0, self.LP.basic_variables[i]]
             if factor != 0:
@@ -105,10 +112,11 @@ class TwoPhase(Solver):
         
         self.LP.maximize = False
         self.coresimplex.solve()
-        if(self.LP.tableau[0, self.LP.table_cols - 1] == 0):
+        if(self.LP.tableau[0, self.LP.table_cols - 1] == 0 and self.LP.state == "optimal"):
              return True
         else :
-             return False
+            self.LP.state = "infeasible"
+            return False
             
 
     def phase2(self):
@@ -138,29 +146,50 @@ class TwoPhase(Solver):
             if factor != 0:
                 self.coresimplex.gaussJordan(self.LP.tableau,i+1,self.LP.basic_variables[i])
          print("after gj")
-         pprint(self.LP.tableau)  
+         pprint(self.LP.tableau) 
+         #self.coresimplex.DecorateSteps(self.LP) 
          self.LP.maximize = self.input.maximize
          self.coresimplex.LP = self.LP
          self.coresimplex.solve()
+         
               
 
 
+# constraints = [
+#     Constrain([1,1, 1], "=", 7, 1),
+#     Constrain([2,-5, 1], ">=", 10, 1),
+# ]
+
+# input_data = Input( ## sheet ex done
+#     n=3,
+#     m=2,
+#     constraints=constraints,
+#     zRow=[1, 2,1],
+#     maximize=True,   
+#     isGoal=False,  
+#     unrestricted=[False, False,False],
+#     symbol_map={0: "x1", 1: "x2", 2: "x3"}
+# )
+
+
 constraints = [
-    Constrain([1,1, 1], "=", 7, 1),
-    Constrain([2,-5, 1], ">=", 10, 1),
+    Constrain([3,1], "=", 3, 1),
+    Constrain([4,3], ">=", 6, 1),
+    Constrain([1,2], "<=",4, 1)
 ]
 
-input_data = Input( ## sheet ex done
-    n=3,
-    m=2,
+input_data = Input( 
+    n=2,
+    m=3,
     constraints=constraints,
-    zRow=[1, 2,1],
+    zRow=[4,1],
     maximize=True,   
     isGoal=False,  
-    unrestricted=[False, False,False],
-    symbol_map={0: "x1", 1: "x2", 2: "x3"}
+    unrestricted=[False, False],
+    symbol_map={0: "x1", 1: "x2"}
 )
 
 solver = TwoPhase(input_data)
 solver.SetLinearProblem()
 solver.solve()
+print(solver.LP.state)

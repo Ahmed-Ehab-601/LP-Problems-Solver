@@ -17,6 +17,8 @@ class LinearProblem:
         self.isGoal = False
         self.table_rows = None
         self.table_cols = None
-        
+        self.goal_map = {}
+        self.goal_values =[]
+      
         
             

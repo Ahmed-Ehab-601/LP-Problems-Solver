@@ -24,8 +24,8 @@ class Simplex(Solver):
           self.LP.tableau[0,i+delta] = -self.input.zRow[i]
           if(self.input.unrestricted[i]):
              self.LP.tableau[0,i+delta+1] = self.input.zRow[i]
-             self.LP.variables[i+delta] = self.input.symbol_map[i]+"+"
-             self.LP.variables[i+delta+1] = self.input.symbol_map[i]+"-"
+             self.LP.variables[i+delta] = self.input.symbol_map[i]+ "\u207A"
+             self.LP.variables[i+delta+1] = self.input.symbol_map[i]+ "\u207B"
              self.LP.non_basic_variables.append(i+delta)
              self.LP.non_basic_variables.append(i+delta+1)
              delta+=1
@@ -46,7 +46,7 @@ class Simplex(Solver):
              else:
                self.LP.tableau[i+self.LP.objective_count,j+delta] = cons.coef[j] 
           self.LP.tableau[i+self.LP.objective_count,slack] = 1
-          self.LP.variables[slack] = "s"+str(i+1)
+          self.LP.variables[slack] = self.subscribts.slist[i]
           self.LP.basic_variables.append(slack)
           slack+=1
           self.LP.tableau[i+self.LP.objective_count,self.LP.table_cols-1] = cons.solution
@@ -60,7 +60,7 @@ class Simplex(Solver):
        self.LP = self.coresimplex.solve()
        print(self.LP.state)
     
-#def test():  
+# def test():  
 #    input = Input( #optimal easy simplex
 #     n=2,
 #     m=4,
@@ -106,6 +106,19 @@ class Simplex(Solver):
 #     zRow=[30,-4],maximize=True,isGoal=False,
 #     unrestricted=[False,True],
 #     symbol_map={0: "x1", 1: "x2"}
+# )
+
+#    input = Input( #try min
+#     n=4,
+#     m=3,
+#     constraints=[
+#         Constrain([1, 2,2,4], "<=", 40, 1),
+#         Constrain([2, -1,1,2], "<=", 8, 1),
+#         Constrain([4,-2, 1,-1], "<=", 10, 1),
+#     ],
+#     zRow=[5,-4,6,-8],maximize=False,isGoal=False,
+#     unrestricted=[False,False,False,False],
+#     symbol_map={0: "x1", 1: "x2",2:"x3",3:"x4"}
 # )
 
 #    x = Simplex(input)

@@ -1,4 +1,4 @@
-import LinearProblem
+from LinearProblem import LinearProblem
 import Input
 from sympy import Matrix,pprint
 class CoreSimplex:
@@ -6,7 +6,7 @@ class CoreSimplex:
         if LP is not None:
             self.LP = LP
         else:
-            self.LP = LinearProblem.LinearProblem()
+            self.LP = LinearProblem()
         
     
     def getEntering(self,table:Matrix,max:bool,row : int,known_variables:dict = {}):
@@ -52,6 +52,9 @@ class CoreSimplex:
         cuurent_sol = None
         entering = self.getEntering(self.LP.tableau,self.LP.maximize,self.LP.objective_index,self.LP.known_variables)
         while entering != -1:
+            if(self.LP.isGoal and not self.ckeckForCanSatisify()):
+                self.LP.state = "unoptimal"
+                break
             leaving = self.getLeaving(self.LP.tableau,self.LP.objective_count-1,entering)
             self.gaussJordan(self.LP.tableau, leaving, entering)
             new_sol = self.LP.tableau[self.LP.objective_index,self.LP.table_cols-1]
@@ -65,22 +68,32 @@ class CoreSimplex:
                 self.LP.state = "unbounded"
                 break
             #swap col_leaving(basic) with entering(non basic)
-            self.LP.basic_variables[leaving-1] = entering
+            print("now entering =",entering,"leaving =",leaving,"col_leaving =",col_leaving)
+            print(self.LP.variables[col_leaving],"Leaves <-> Enters",self.LP.variables[entering])
+            self.LP.basic_variables[leaving-self.LP.objective_count] = entering
             self.LP.non_basic_variables = [col_leaving if x == entering else x for x in self.LP.non_basic_variables]
             pprint(self.LP.tableau)
             print(self.LP.variables)
             print(self.LP.basic_variables)
             print(self.LP.non_basic_variables)
-            entering = self.getEntering(self.LP.tableau,self.LP.maximize,self.LP.objective_count-1,self.LP.known_variables)
+            entering = self.getEntering(self.LP.tableau,self.LP.maximize,self.LP.objective_index,self.LP.known_variables)
         if(entering == -1):
             self.LP.state = "optimal"
         return self.LP
-    def DecorateSteps(self):
+    def DecorateSteps(self,LP:LinearProblem):
         pass
-   
+    def ckeckForCanSatisify(self):
+        entering = self.getEntering(self.LP.tableau,False,self.LP.objective_index,self.LP.known_variables)
+        for i in range(self.LP.objective_count):
+            if i == self.LP.objective_index:
+                continue      
+            if self.LP.tableau[i,entering] != 0 and self.LP.satisfied[i]:
+                return False
+        return True  
+    
 # def main():
 #     #test get leaving
-#     core = CoreSimplex()
+#    core = CoreSimplex()
 #     tabel1 = Matrix([[1,-1,0,0,2,120],[0,-1/2,0,1,-0.5,10],[0,-0.5,1,0,1,30]])
 #     print(core.getLeaving(tabel1,0,1))
 #     tabel2 = Matrix([[-5,-4,0,0,0,0,0],[6,4,1,0,0,0,24],[1,2,0,1,0,0,6],[0,1,0,0,0,1,2]])
@@ -101,11 +114,13 @@ class CoreSimplex:
 #     print(matrix)
 #     #done
 #     #get entering
-#     tabel1 = Matrix([[1*'p',-1,0,0,2,120],[0,-1/2,0,1,-0.5,10],[0,-0.5,1,0,1,30]])
-#     print(core.getEntering(tabel1,False,0,{'p':1}))
-#     tabel2 = Matrix([[-5,-4,0,0,0,0,0],[6,4,1,0,0,0,24],[1,2,0,1,0,0,6],[0,1,0,0,0,1,2]])
-#     print(core.getEntering(tabel2,False,0,{'p':2}))
-#     #done
+    # key = 'p'+"\u207A"
+    # tabel1 = Matrix([[key,-1,0,0,2,120],[0,-1/2,0,1,-0.5,10],[0,-0.5,1,0,1,30]])
+    # tabel1[0,0]*= -1
+    # print(core.getEntering(tabel1,True,0,{key:9}))
+    # tabel2 = Matrix([[-5,-4,0,0,0,0,0],[6,4,1,0,0,0,24],[1,2,0,1,0,0,6],[0,1,0,0,0,1,2]])
+    # print(core.getEntering(tabel2,True,0,{'p':2}))
+    #done
 
 # if __name__ == "__main__":
 #     main()
