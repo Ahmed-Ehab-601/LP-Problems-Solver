@@ -2,6 +2,8 @@ from Solver import Solver
 from sympy import Matrix, pprint
 from Input import Input
 from Constrain import Constrain
+from LinearProblem import LinearProblem
+
 class GoalProgramming(Solver):
     def SetLinearProblem(self):
        if not self.input.isGoal:
@@ -104,18 +106,10 @@ class GoalProgramming(Solver):
             currentZ+=1
             slack+=1
             self.LP.tableau[i+self.LP.objective_count,self.LP.table_cols-1] = cons.solution
-       pprint(self.LP.tableau)
-       print("")
-       pprint(self.LP.variables)
-       pprint(self.LP.basic_variables)
-       pprint(self.LP.non_basic_variables)
-       pprint(self.LP.known_variables)
-       pprint(self.LP.goal_map)
-       pprint(self.LP.goal_values)
-       print(self.LP.objective_count)
+      
           
     def solve(self):
-       #self.coresimplex.DecorateSteps(self.LP)
+       self.coresimplex.DecorateSteps(self.LP)
        print("update Z rows")
        self.updateZRows()
        self.LP.satisfied = self.LP.objective_count*[False]
@@ -152,36 +146,37 @@ class GoalProgramming(Solver):
              slack+=1
           else:
              slack+=1     
+def test():
+    input1 = Input( 
+        n=2, m=4,
+        constraints=[
+            Constrain([7, 3], ">=", 40, 100),
+            Constrain([10, 5], ">=", 60, 80),
+            Constrain([5, 4], ">=", 35, 60),
+            Constrain([100, 60], "<=", 600, 1)
+        ],
+        zRow=[100, 60], maximize=True, isGoal=True,
+        unrestricted=[False, False],
+        symbol_map={0: "x1", 1: "x2"}
+    )
 
-# def test():  
-#    input = Input( #goal 
-#     n=2,
-#     m=4,
-#     constraints=[
-#         Constrain([7, 3], ">=", 40, 100),
-#         Constrain([10, 5], ">=", 60, 80),
-#         Constrain([5, 4], ">=", 35, 60),
-#         Constrain([100, 60], "<=", 600, 1)
-#     ],
-#     zRow=[100,60],maximize=True,isGoal=True,
-#     unrestricted=[False,False],
-#     symbol_map={0: "x1", 1: "x2"}
-# )
-#    input = Input( #goal 
-#     n=2,
-#     m=4,
-#     constraints=[
-#         Constrain([200, 0], ">=", 1000, 60),
-#         Constrain([100, 400], ">=", 1200, 100),
-#         Constrain([0, 250], ">=", 800, 150),
-#         Constrain([1500, 3000], "<=", 15000, 1)
-#     ],
-#     zRow=[100,60],maximize=True,isGoal=True,
-#     unrestricted=[False,False],
-#     symbol_map={0: "x1", 1: "x2"}
-# )
-#    goal = GoalProgramming(input)
-#    goal.SetLinearProblem()   
-#    goal.solve()
-       
-# test()   
+    input2 = Input( 
+        n=2, m=4,
+        constraints=[
+            Constrain([200, 0], ">=", 1000, 60),
+            Constrain([100, 400], ">=", 1200, 100),
+            Constrain([0, 250], ">=", 800, 150),
+            Constrain([1500, 3000], "<=", 15000, 1)
+        ],
+        zRow=[100, 60], maximize=True, isGoal=True,
+        unrestricted=[False, False],
+        symbol_map={0: "x1", 1: "x2"}
+    )
+
+    for case in [input1, input2]:
+        print("\nRunning test case...")
+        goal = GoalProgramming(case)
+        goal.SetLinearProblem()   
+        goal.solve()
+
+test()

@@ -14,15 +14,15 @@ class BigM(Solver):
    def SetLinearProblem(self):
         self.LP.n = self.input.n
         self.LP.m = self.input.m
-
+        self.LP.isGoal = self.input.isGoal
         self.LP.basic_variables = [None] * self.LP.m 
         self.LP.maximize = self.input.maximize
         
         self.LP.table_cols = self.LP.n + self.LP.m + 1 + self.input.unrestricted.count(True)
         self.LP.table_rows = self.LP.m + 1
-
-        self.LP.tableau = self.preparetable()  
         self.coresimplex = CoreSimplex.CoreSimplex(self.LP)
+        self.LP.tableau = self.preparetable()  
+        
 
 
    def preparetable(self):
@@ -107,11 +107,7 @@ class BigM(Solver):
          else:
             self.LP.tableau[0, j + col_offset] = -self.input.zRow[j]  
 
-      print("\nFinal Tableau:")
-      pprint(self.LP.tableau)
-      print(self.LP.basic_variables)
-      print(self.LP.non_basic_variables)
-      print(self.LP.variables)
+      self.coresimplex.DecorateSteps(self.LP)
       return self.LP.tableau
    
    def solve(self):   

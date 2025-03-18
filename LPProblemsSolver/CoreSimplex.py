@@ -1,5 +1,8 @@
+
 from LinearProblem import LinearProblem
-import Input
+
+from LinearProblem import LinearProblem
+from tabulate import tabulate
 from sympy import Matrix,pprint
 class CoreSimplex:
     def __init__(self,LP: LinearProblem=None):
@@ -80,8 +83,7 @@ class CoreSimplex:
         if(entering == -1):
             self.LP.state = "optimal"
         return self.LP
-    def DecorateSteps(self,LP:LinearProblem):
-        pass
+
     def ckeckForCanSatisify(self):
         entering = self.getEntering(self.LP.tableau,False,self.LP.objective_index,self.LP.known_variables)
         for i in range(self.LP.objective_count):
@@ -90,7 +92,25 @@ class CoreSimplex:
             if self.LP.tableau[i,entering] != 0 and self.LP.satisfied[i]:
                 return False
         return True  
-    
+ 
+    def DecorateSteps(self,LP:LinearProblem):
+        pprint(LP.tableau)
+        headers = ["Variables"] + [LP.variables[i] for i in LP.variables]  
+        headers.append("RHS")  
+        table_data = []
+        for i in range(LP.objective_count):  
+            if(LP.isGoal==False):
+                z_row = ["Z"] + list(self.LP.tableau[0, :]) 
+            else: 
+                z_row = ["Z"+str(i+1)] + list(LP.tableau[i, :]) 
+            table_data.append(z_row)
+       
+        for i, row in enumerate(LP.tableau[LP.objective_count:, :].tolist()): 
+            basic_var = LP.variables.get(LP.basic_variables[i], f"Var {LP.basic_variables[i]}")
+            table_data.append([basic_var] + row)
+
+        print(tabulate(table_data, headers=headers, tablefmt="grid"))
+
 # def main():
 #     #test get leaving
 #    core = CoreSimplex()
