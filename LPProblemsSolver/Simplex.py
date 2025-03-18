@@ -1,6 +1,5 @@
 from Solver import Solver
 from LinearProblem import LinearProblem
-from LPsolver import LPSolver
 from sympy import Matrix, pprint
 from Input import Input
 from Constrain import Constrain
@@ -56,12 +55,14 @@ class Simplex(Solver):
        
        
     def solve(self):
-       print("Initial Tableau")
-       print("")
+       print("Initial Tableau\n")
+       self.LP.steps += "Initial Tableau\n\n"
        self.coresimplex.LP = self.LP
        self.LP = self.coresimplex.solve()
-       print(self.LP.state)
        self.printSolution()
+       with open("Simplex.txt", "w") as file:
+          file.write(self.LP.steps)
+       
        
     
 # def test():  
@@ -77,7 +78,7 @@ class Simplex(Solver):
 #     zRow=[5,4],maximize=True,isGoal=False,
 #     unrestricted=[False,False],
 #     symbol_map={0: "x1", 1: "x2"}
-# )
+#)
 #    input = Input( #degenerate
 #     n=2,
 #     m=2,
@@ -127,10 +128,10 @@ class Simplex(Solver):
 
 #    x = Simplex(input)
 #    x.SetLinearProblem()
-#    # pprint(x.LP.tableau)
-#    # print(x.LP.variables)
-#    # print(x.LP.basic_variables)
-#    # print(x.LP.non_basic_variables)
+# #    # pprint(x.LP.tableau)
+# #    # print(x.LP.variables)
+# #    # print(x.LP.basic_variables)
+# #    # print(x.LP.non_basic_variables)
 #    x.solve()
    
 

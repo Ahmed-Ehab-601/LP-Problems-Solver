@@ -1,6 +1,6 @@
 
 from LinearProblem import LinearProblem
-
+from SubscriptSuperscriptLists import SubscriptSuperscriptLists
 from LinearProblem import LinearProblem
 from tabulate import tabulate
 from sympy import Matrix,pprint
@@ -10,7 +10,7 @@ class CoreSimplex:
             self.LP = LP
         else:
             self.LP = LinearProblem()
-        
+        self.subscribts = SubscriptSuperscriptLists()
     
     def getEntering(self,table:Matrix,max:bool,row : int,known_variables:dict = {}):
         z = table[row,:table.shape[1]-1].copy()
@@ -70,6 +70,7 @@ class CoreSimplex:
             #swap col_leaving(basic) with entering(non basic)
             print(self.LP.variables[col_leaving],"Leaves <-> Enters",self.LP.variables[entering])
             print("")
+            self.LP.steps += str(self.LP.variables[col_leaving])+" Leaves <-> Enters "+str(self.LP.variables[entering])+"\n\n"
             self.LP.basic_variables[leaving-self.LP.objective_count] = entering
             self.LP.non_basic_variables = [col_leaving if x == entering else x for x in self.LP.non_basic_variables]
             self.DecorateSteps(self.LP)
@@ -93,15 +94,16 @@ class CoreSimplex:
         table_data = []
         for i in range(LP.objective_count):  
             if(LP.isGoal==False):
-                z_row = ["Z"] + list(self.LP.tableau[0, :]) 
+                z_row = ["Z" if not LP.phase1 else "r"] + list(self.LP.tableau[0, :]) 
             else: 
-                z_row = ["Z"+str(i+1)] + list(LP.tableau[i, :]) 
+                z_row = [self.subscribts.zlist[i]] + list(LP.tableau[i, :]) 
             table_data.append(z_row)
        
         for i, row in enumerate(LP.tableau[LP.objective_count:, :].tolist()): 
             basic_var = LP.variables.get(LP.basic_variables[i], f"Var {LP.basic_variables[i]}")
             table_data.append([basic_var] + row)
 
+        self.LP.steps += tabulate(table_data, headers=headers, tablefmt="grid")+'\n'+'\n'
         print(tabulate(table_data, headers=headers, tablefmt="grid"))
         print("")
 

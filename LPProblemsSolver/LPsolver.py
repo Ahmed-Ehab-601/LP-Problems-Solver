@@ -3,16 +3,18 @@ from TwoPhase import TwoPhase
 from BigM import BigM
 from Input import Input
 from Constrain import Constrain
-import Goalprogramming
-import Simplex
+from Goalprogramming import GoalProgramming
+from Simplex import Simplex
+from SubscriptSuperscriptLists import SubscriptSuperscriptLists
 class LPSolver:
     def __init__(self): 
       self.input = None
       self.solver = None 
+      self.subscribts = SubscriptSuperscriptLists()
 
     def check_constraints(self):
         for constraint in self.input.constraints:  
-            if constraint in ['>=', '=']:  
+            if constraint.type in ['>=', '=']:  
                method = input("Enter which method to use (bigm, 2phase): ").lower()
 
                if method == 'bigm':
@@ -27,13 +29,16 @@ class LPSolver:
     
 
                 if(self.input.isGoal == True): 
-                    return Goalprogramming(self.input)  
+                    return GoalProgramming(self.input)  
 
                 else:
                     return Simplex(self.input)  
 
     def solve(self) :
-       pass
+        self.get_input()
+        self.solver = self.check_constraints()
+        self.solver.SetLinearProblem()
+        self.solver.solve()
 
     def get_input(self):
         n=int(input("Enter number of desction variables : "))
@@ -46,9 +51,9 @@ class LPSolver:
         unrestricted = [False for i in range(n)]
         print("\n=== Objective Function ===\n")
         for i in range(n):
-            symbol = input(f"Enter the symbol of decision variable {i + 1}: ")
+            symbol = self.subscribts.xlist[i]
             symbol_map[symbol] = i
-            input_map[i]=symbol
+            input_map[i] = symbol
             unres = input(f"If the decision variable {symbol} is unrestricted enter 1, if not enter 0: ")
             unrestricted[i] = True if unres == "1" else False
       
@@ -107,5 +112,5 @@ class LPSolver:
 
         print("\n=== END OF INPUT SUMMARY ===\n")
 
-# l=LPSolver()
-# l.get_input()
+l=LPSolver()
+l.solve()

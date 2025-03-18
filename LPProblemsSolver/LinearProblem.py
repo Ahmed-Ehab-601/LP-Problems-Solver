@@ -11,7 +11,7 @@ class LinearProblem:
         self.maximize = None
         self.variables = {} # variables map
         self.state = None # state of this optimal solution
-        self.steps = None # steps
+        self.steps = "Hello Samaa 🙈\nHello Ninja Team 🥷🏻\n\n" # steps
         self.objective_count = 1
         self.known_variables = {}
         self.isGoal = False

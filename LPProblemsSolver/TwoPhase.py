@@ -27,6 +27,8 @@ class TwoPhase(Solver):
             if self.phase2():
                 return
         self.printSolution()
+        with open("TwoPhase.txt", "w") as file:
+            file.write(self.LP.steps)
       
     def get_table(self):
         self.subscribts=SubscriptSuperscriptLists()
@@ -100,15 +102,18 @@ class TwoPhase(Solver):
         print("\n" + "=" * 60)
         print(" PHASE ONE  ".center(60))
         print("=" * 60)
-        print("/n")
+        print("\n")
+        self.LP.steps += "PHASE ONE\n\n"
         self.LP.phase1 = True
         print("Initial Tableau with artificial variables\n" )
+        self.LP.steps += "Initial Tableau with artificial variables\n\n"
         self.coresimplex.DecorateSteps(self.LP)
         for i in range(self.LP.m):
             factor = self.LP.tableau[0, self.LP.basic_variables[i]]
             if factor != 0:
                 self.LP.tableau[0, :] -= factor * self.LP.tableau[i + 1, :]
         print("Update Z Row ..............\n")
+        self.LP.steps += "Update Z Row\n\n"
         self.LP.maximize = False
         self.coresimplex.solve()
         if(self.LP.tableau[0, self.LP.table_cols - 1] == 0 and self.LP.state == "optimal"):
@@ -121,6 +126,7 @@ class TwoPhase(Solver):
     def phase2(self):
          print("\n" + "=" * 60)
          print(" PHASE TWO  ".center(60))
+         self.LP.steps += "PHASE TWO\n\n"
          print("=" * 60)
          print("/n")
          self.LP.phase1 = False
@@ -129,6 +135,7 @@ class TwoPhase(Solver):
              z[i]= -self.input.zRow[i]
         
          print("Insert Original Objective Function..........\n")
+         self.LP.steps += "Insert Original Objective Function\n\n"
         
          for j in range(len(z)):
             self.LP.tableau[0, j] = z[j]
@@ -163,8 +170,6 @@ class TwoPhase(Solver):
                elif index in self.LP.non_basic_variables:
                   i= self.LP.non_basic_variables.index(index)
                   self.LP.non_basic_variables[i]=index-prevAritificalVariables[index]
-         print(f"basic variables are {self.LP.basic_variables}\n")
-         print(f"non basic variables are {self.LP.non_basic_variables}\n")
          self.LP.variables = handledVar
        
           #      for j in range(self.LP.m):
@@ -175,9 +180,11 @@ class TwoPhase(Solver):
         #              self.LP.basic_variables.remove(self.atrificalVariables[i])
          
          print("Removing Atrifical Variables ..........\n")
+         self.LP.steps += "Removing Atrifical Variables\n\n"
       
          self.coresimplex.DecorateSteps(self.LP)
          print("Update Z Row ..............\n")
+         self.LP.steps += "Update Z Row\n\n"
         
          for i in range(len(self.LP.basic_variables)):
            
@@ -211,24 +218,24 @@ class TwoPhase(Solver):
 # )
 
 
-constraints = [
-    Constrain([3,1], "=", 3, 1),
-    Constrain([4,3], ">=", 6, 1),
-    Constrain([1,2], "<=",4, 1)
-]
+# constraints = [
+#     Constrain([3,1], "=", 3, 1),
+#     Constrain([4,3], ">=", 6, 1),
+#     Constrain([1,2], "<=",4, 1)
+# ]
 
-input_data = Input( 
-    n=2,
-    m=3,
-    constraints=constraints,
-    zRow=[4,1],
-    maximize=False,   
-    isGoal=False,  
-    unrestricted=[False, False],
-    symbol_map={0: "x1", 1: "x2"}
-)
+# input_data = Input( 
+#     n=2,
+#     m=3,
+#     constraints=constraints,
+#     zRow=[4,1],
+#     maximize=False,   
+#     isGoal=False,  
+#     unrestricted=[False, False],
+#     symbol_map={0: "x1", 1: "x2"}
+# )
 
-solver = TwoPhase(input_data)
-solver.SetLinearProblem()
-solver.solve()
+# solver = TwoPhase(input_data)
+# solver.SetLinearProblem()
+# solver.solve()
 

@@ -22,4 +22,9 @@ class SubscriptSuperscriptLists:
         self.xminuslist = [f"x{subscript_numbers[i]}{superscript_minus}" for i in range(1, 21)]
         self.alist = [f"a{subscript_numbers[i]}" for i in range(1, 21)]
         self.elist = [f"e{subscript_numbers[i]}" for i in range(1, 21)]
+        self.zlist = [f"Z{subscript_numbers[i]}" for i in range(1, 21)]
+        self.rlist = [f"r{subscript_numbers[i]}" for i in range(1, 21)]
+        self.xlist = [f"x{subscript_numbers[i]}" for i in range(1, 21)]
+        
+        
   

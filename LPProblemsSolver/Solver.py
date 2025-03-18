@@ -18,14 +18,24 @@ class Solver(ABC):
         pass
 
     def printSolution(self):
+        if self.LP.state != "optimal" and self.LP.state != "Goal":
+            print(f"\n► Problem State: {self.LP.state.upper()}")
+            self.LP.steps += f"\n► Problem State: {self.LP.state.upper()}\n\n"
+            return
+            
         print("\n" + "=" * 40)
+        self.LP.steps += ("\n" + ("=" * 40))
         print(" SOLUTION SUMMARY ".center(40))
+        self.LP.steps += "SOLUTION SUMMARY".center(18)
         print("=" * 40)
+        self.LP.steps += "=" * 40+"\n"
         
         if not self.input.isGoal:
-            print(f"\n► Optimal Solution: {self.LP.tableau[0, self.LP.table_cols-1]}\n")
+            print(f"► Optimal Solution: {self.LP.tableau[0, self.LP.table_cols-1]}\n")
+            self.LP.steps += f"\n► Optimal Solution: {self.LP.tableau[0, self.LP.table_cols-1]}\n\n"
 
         print("► Optimal Values:")
+        self.LP.steps += "► Optimal Values:\n\n"
         max_var_length = max(len(self.LP.variables[bv]) for bv in self.LP.basic_variables if self.LP.variables[bv].startswith("x")) if self.LP.basic_variables else 10
         for i in self.LP.basic_variables:
             var=self.LP.variables[i]
@@ -40,14 +50,17 @@ class Solver(ABC):
                
 
                 var_name = self.LP.variables.get(var, var)
-                print(f"  {var_name.ljust(max_var_length)} : {display_value.rjust(10)}")
+                print(f"  {var_name.ljust(max_var_length)} : {display_value}")
+                self.LP.steps += f"  {var_name.ljust(max_var_length)} : {display_value}\n"
 
      
         print(f"\n► Problem State: {self.LP.state.upper()}")
+        self.LP.steps += f"\n► Problem State: {self.LP.state.upper()}\n\n"
 
        
         if self.input.isGoal:
             print("\n► Constraints Analysis:")
+            self.LP.steps += "\n► Constraints Analysis:\n\n"
             k = 0
             for i, constraint in enumerate(self.input.constraints, start=1):
                 coef_terms = []
@@ -70,7 +83,9 @@ class Solver(ABC):
 
                
                 print(f"\nConstraint {i}: {full_constraint}")
+                self.LP.steps += f"\nConstraint {i}: {full_constraint}\n"
                 print(f"   {status_icon} {status}")
+                self.LP.steps += f"   {status_icon} {status}\n"
              
 
         print("\n" + "=" * 40 + "\n")

@@ -7,10 +7,6 @@ from Constrain import Constrain
 from Input import Input
 
 class BigM(Solver):
-   def __init__(self, input_data):
-        self.input = input_data
-        self.LP = LinearProblem.LinearProblem()
-
    def SetLinearProblem(self):
         self.LP.n = self.input.n
         self.LP.m = self.input.m
@@ -74,25 +70,25 @@ class BigM(Solver):
          if constraint.type in ("<=", "<"):  
                self.LP.tableau[i + 1, slack_index] = 1
                self.LP.basic_variables[i] = slack_index  
-               self.LP.variables[slack_index]="s"+str(i+1) 
+               self.LP.variables[slack_index]=self.subscribts.slist[i]
                slack_index += 1
 
          elif constraint.type in (">=", ">"):  
                self.LP.tableau[i + 1, slack_index] = -1 
                self.LP.non_basic_variables.append(slack_index)
-               self.LP.variables[slack_index]="e"+str(i+1) 
+               self.LP.variables[slack_index]=self.subscribts.elist[i]
                slack_index += 1  
                self.LP.tableau[i + 1, artificial_index] = 1
                self.LP.basic_variables[i] = artificial_index
                self.LP.tableau[0, artificial_index] = "M" 
-               self.LP.variables[artificial_index]="a"+str(i+1)  
+               self.LP.variables[artificial_index]=self.subscribts.alist[i] 
                artificial_index += 1  
 
          elif constraint.type == "=":  
                self.LP.tableau[i + 1, artificial_index] = 1
                self.LP.basic_variables[i] = artificial_index
                self.LP.tableau[0, artificial_index] = "M"
-               self.LP.variables[artificial_index]="a"+str(i+1)  
+               self.LP.variables[artificial_index]=self.subscribts.alist[i] 
  
                artificial_index += 1
 
@@ -107,14 +103,14 @@ class BigM(Solver):
          else:
             self.LP.tableau[0, j + col_offset] = -self.input.zRow[j]  
 
-      print("Initial Tableau")
-      print("")
+      print("Initial Tableau\n")
+      self.LP.steps += "Initial Tableau\n\n"
       self.coresimplex.DecorateSteps(self.LP)
       return self.LP.tableau
    
    def solve(self): 
-      print("Update Z Row")
-      print("")  
+      print("Update Z Row\n")
+      self.LP.steps += "Update Z Row\n\n"  
       for i in range(len(self.LP.basic_variables)):
             row = i + 1
             col = self.LP.basic_variables[i]
@@ -129,6 +125,9 @@ class BigM(Solver):
                   self.LP.state = "Infeasible"
                   break
       self.printSolution()
+      with open("BigM.txt", "w") as file:
+         file.write(self.LP.steps)
+      
                   
  
 # constraints = [
@@ -152,22 +151,7 @@ class BigM(Solver):
 # solver.solve()
 
 
-constraints = [
-    Constrain([3,1], "=", 3, 1),
-    Constrain([4,3], ">=", 6, 1),
-    Constrain([1,2], "<=",4, 1)
-]
 
-input_data = Input(  #optimal don't know answer
-    n=2,
-    m=3,
-    constraints=constraints,
-    zRow=[4,1],
-    maximize=False,   
-    isGoal=False,  
-    unrestricted=[False, False],
-    symbol_map={0: "x1", 1: "x2"}
-)
 
 # constraints = [
 #     Constrain([1,1, 1], "=", 7, 1),
@@ -185,7 +169,7 @@ input_data = Input(  #optimal don't know answer
 #     symbol_map={0: "x1", 1: "x2", 2: "x3"}
 # )
 
-solver = BigM(input_data)
-solver.SetLinearProblem()
-solver.solve()
+# solver = BigM(input_data)
+# solver.SetLinearProblem()
+# solver.solve()
 
