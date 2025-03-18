@@ -61,7 +61,7 @@ class Simplex(Solver):
        self.coresimplex.LP = self.LP
        self.LP = self.coresimplex.solve()
        print(self.LP.state)
-       #self.printSolution()
+       self.printSolution()
        
     
 # def test():  

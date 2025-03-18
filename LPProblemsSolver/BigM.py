@@ -128,7 +128,7 @@ class BigM(Solver):
               if self.LP.variables[self.LP.basic_variables[i]].startswith("a"):
                   self.LP.state = "Infeasible"
                   break
-      print(self.LP.state)
+      self.printSolution()
                   
  
 # constraints = [

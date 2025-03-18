@@ -179,5 +179,6 @@ def test():
         goal = GoalProgramming(case)
         goal.SetLinearProblem()   
         goal.solve()
+        goal.printSolution()
 
 test()

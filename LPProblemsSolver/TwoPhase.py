@@ -4,11 +4,12 @@ from sympy import Matrix, pprint
 from Constrain import Constrain
 from Input import Input
 from CoreSimplex import CoreSimplex
+from SubscriptSuperscriptLists import SubscriptSuperscriptLists
 
 class TwoPhase(Solver):
+    
     atrificalVariables=[]
     def SetLinearProblem(self):
-        StandardObj = self.input.maximize
         self.LP = LinearProblem()
         self.LP.n = self.input.n
         self.LP.m = self.input.m
@@ -19,25 +20,16 @@ class TwoPhase(Solver):
         self.LP.basic_variables = [None] * self.LP.m 
         self.LP.tableau = self.get_table()
         self.LP.maximize = self.input.maximize
-        # pprint(self.LP.tableau)
-        # print(self.LP.variables)
-        # print(self.LP.basic_variables)
-        # print(self.LP.non_basic_variables)
-        # print(self.atrificalVariables)
         self.coresimplex=CoreSimplex(self.LP)
 
     def solve(self):
-        pprint(self.LP.tableau)
-        print(self.LP.variables)
-        print(self.LP.basic_variables)
-        print(self.LP.non_basic_variables)
-        print(self.atrificalVariables)
         if self.phase1():
             if self.phase2():
                 return
-        #self.printSolution()    
-
+        self.printSolution()
+      
     def get_table(self):
+        self.subscribts=SubscriptSuperscriptLists()
         num_artificiale = 0
         for constraint in self.input.constraints:
             if constraint.type == ">=":
@@ -60,8 +52,9 @@ class TwoPhase(Solver):
             for j in range(self.input.n):
                 m[i, j] = constraint.coef[j]
                 if self.input.unrestricted[j]:
+                    self.LP.variables[j] = self.subscribts.xpluslist[j]
                     m[i, self.LP.n+j] = -1 * constraint.coef[j]
-                    self.LP.variables[self.LP.n+j] = "-" + str(self.LP.variables[j])
+                    self.LP.variables[self.LP.n+j] = self.subscribts.xminuslist[j]
                     if self.LP.non_basic_variables.count(self.LP.n+j) == 0:
                         self.LP.non_basic_variables.append(self.LP.n+j)
                     
@@ -71,17 +64,17 @@ class TwoPhase(Solver):
             if constraint.type == "<=":
                 m[i,self.LP.n+slack+num_unRes] = 1
                 self.LP.basic_variables[i - 1]=self.LP.n+slack+num_unRes
-                self.LP.variables[self.LP.n+slack+num_unRes] = "s" + str(i)
+                self.LP.variables[self.LP.n+slack+num_unRes] = self.subscribts.slist[i-1]
                 slack+=1
 
             elif constraint.type == ">=":
                 m[i,self.LP.n+slack+num_unRes] = -1
-                self.LP.variables[self.LP.n+slack+num_unRes] = "e" + str(i)
+                self.LP.variables[self.LP.n+slack+num_unRes] = self.subscribts.elist[i-1]
                 self.LP.non_basic_variables.append(self.LP.n+slack+num_unRes)
                 slack+=1
                 m[i,self.LP.n+slack+num_unRes] = 1
                 self.LP.basic_variables[i - 1] =self.LP.n+slack+num_unRes
-                self.LP.variables[self.LP.n+slack+num_unRes] = "a" + str(i)
+                self.LP.variables[self.LP.n+slack+num_unRes] = self.subscribts.alist[i-1]
                 self.atrificalVariables.append(self.LP.n+slack+num_unRes)
                 z_artificial[self.LP.n+slack+num_unRes] = -1
                 slack+=1
@@ -90,7 +83,7 @@ class TwoPhase(Solver):
             elif constraint.type == "=":
                 m[i,self.LP.n+slack+num_unRes] = 1
                 self.LP.basic_variables[i - 1] = self.LP.n+slack+num_unRes
-                self.LP.variables[self.LP.n+slack+num_unRes] = "a" + str(i)
+                self.LP.variables[self.LP.n+slack+num_unRes] = self.subscribts.alist[i-1]
                 self.atrificalVariables.append(self.LP.n+slack+num_unRes)
                 z_artificial[self.LP.n+slack+num_unRes] = -1
                 slack += 1
@@ -104,12 +97,15 @@ class TwoPhase(Solver):
         return m
 
     def phase1(self):
-        #self.coresimplex.DecorateSteps(self.LP)
+        print("<============================================ PHASE ONE ================================================>\n")
+        self.LP.phase1 = True
+        print("Initial Tableau with artificial variables\n" )
+        self.coresimplex.DecorateSteps(self.LP)
         for i in range(self.LP.m):
             factor = self.LP.tableau[0, self.LP.basic_variables[i]]
             if factor != 0:
                 self.LP.tableau[0, :] -= factor * self.LP.tableau[i + 1, :]
-        
+        print("Update Z Row ..............\n")
         self.LP.maximize = False
         self.coresimplex.solve()
         if(self.LP.tableau[0, self.LP.table_cols - 1] == 0 and self.LP.state == "optimal"):
@@ -120,34 +116,71 @@ class TwoPhase(Solver):
             
 
     def phase2(self):
+         print("\n<=========================================== PHASE TWO ===============================================>\n")
+         self.LP.phase1 = False
          z = [0] * self.LP.table_cols
          for i in range(len(self.input.zRow)):
              z[i]= -self.input.zRow[i]
-         
-         print(z)
+        
+         print("Insert Original Objective Function..........\n")
+        
          for j in range(len(z)):
             self.LP.tableau[0, j] = z[j]
-    
+       
+         self.coresimplex.DecorateSteps(self.LP)
+           
+      
+         prevAritificalVariables ={}
+         handledVar={}
+         for index , var in enumerate(self.LP.variables):
+            prevAritificalVariables[index]=0
+
+        
+         for a in self.atrificalVariables:
+             if(a in self.LP.basic_variables): 
+                self.LP.basic_variables.remove(a)
+             if(a in self.LP.non_basic_variables): 
+                self.LP.non_basic_variables.remove(a)
+             for index , var in enumerate(self.LP.variables):
+                if (index>a):
+                        prevAritificalVariables[index]+=1
+     
+         
          for i in range(len(self.atrificalVariables)-1,-1,-1):
              self.LP.tableau.col_del(self.atrificalVariables[i])
              self.LP.table_cols-=1
-             for j in range(self.LP.m):
-                 if(self.LP.basic_variables[j]==self.atrificalVariables[i]):
-                     self.LP.tableau.row_del(j+1)
-                     self.LP.table_rows-=1
-                     self.LP.m-=1
-                     self.LP.basic_variables.remove(self.atrificalVariables[i])
-         print("after remove")
-         pprint(self.LP.tableau)    
+         for index , var in (self.LP.variables).items():
+               handledVar[index-prevAritificalVariables[index]]=var
+               if index in self.LP.basic_variables:
+                  i= self.LP.basic_variables.index(index)
+                  self.LP.basic_variables[i]=index-prevAritificalVariables[index]
+               elif index in self.LP.non_basic_variables:
+                  i= self.LP.non_basic_variables.index(index)
+                  self.LP.non_basic_variables[i]=index-prevAritificalVariables[index]
+         print(f"basic variables are {self.LP.basic_variables}\n")
+         print(f"non basic variables are {self.LP.non_basic_variables}\n")
+         self.LP.variables = handledVar
+       
+          #      for j in range(self.LP.m):
+        #          if(self.LP.basic_variables[j]==self.atrificalVariables[i]):
+        #              self.LP.tableau.row_del(j+1)
+        #              self.LP.table_rows-=1
+        #              self.LP.m-=1
+        #              self.LP.basic_variables.remove(self.atrificalVariables[i])
+         
+         print("Removing Atrifical Variables ..........\n")
+      
+         self.coresimplex.DecorateSteps(self.LP)
+         print("Update Z Row ..............\n")
         
-            
          for i in range(len(self.LP.basic_variables)):
+           
             factor = self.LP.tableau[0, self.LP.basic_variables[i]]
+            
             if factor != 0:
                 self.coresimplex.gaussJordan(self.LP.tableau,i+1,self.LP.basic_variables[i])
-         print("after gj")
-         pprint(self.LP.tableau) 
-         #self.coresimplex.DecorateSteps(self.LP) 
+               
+    
          self.LP.maximize = self.input.maximize
          self.coresimplex.LP = self.LP
          self.coresimplex.solve()
@@ -172,24 +205,24 @@ class TwoPhase(Solver):
 # )
 
 
-# constraints = [
-#     Constrain([3,1], "=", 3, 1),
-#     Constrain([4,3], ">=", 6, 1),
-#     Constrain([1,2], "<=",4, 1)
-# ]
+constraints = [
+    Constrain([3,1], "=", 3, 1),
+    Constrain([4,3], ">=", 6, 1),
+    Constrain([1,2], "<=",4, 1)
+]
 
-# input_data = Input( 
-#     n=2,
-#     m=3,
-#     constraints=constraints,
-#     zRow=[4,1],
-#     maximize=True,   
-#     isGoal=False,  
-#     unrestricted=[False, False],
-#     symbol_map={0: "x1", 1: "x2"}
-# )
+input_data = Input( 
+    n=2,
+    m=3,
+    constraints=constraints,
+    zRow=[4,1],
+    maximize=False,   
+    isGoal=False,  
+    unrestricted=[False, False],
+    symbol_map={0: "x1", 1: "x2"}
+)
 
-# solver = TwoPhase(input_data)
-# solver.SetLinearProblem()
-# solver.solve()
-# print(solver.LP.state)
+solver = TwoPhase(input_data)
+solver.SetLinearProblem()
+solver.solve()
+

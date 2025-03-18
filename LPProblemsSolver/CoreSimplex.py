@@ -53,7 +53,7 @@ class CoreSimplex:
         entering = self.getEntering(self.LP.tableau,self.LP.maximize,self.LP.objective_index,self.LP.known_variables)
         while entering != -1:
             if(self.LP.isGoal and not self.ckeckForCanSatisify()):
-                self.LP.state = "unoptimal"
+                self.LP.state = "Goal"
                 break
             leaving = self.getLeaving(self.LP.tableau,self.LP.objective_count-1,entering)
             self.gaussJordan(self.LP.tableau, leaving, entering)
