@@ -97,7 +97,10 @@ class TwoPhase(Solver):
         return m
 
     def phase1(self):
-        print("<============================================ PHASE ONE ================================================>\n")
+        print("\n" + "=" * 60)
+        print(" PHASE ONE  ".center(60))
+        print("=" * 60)
+        print("/n")
         self.LP.phase1 = True
         print("Initial Tableau with artificial variables\n" )
         self.coresimplex.DecorateSteps(self.LP)
@@ -116,7 +119,10 @@ class TwoPhase(Solver):
             
 
     def phase2(self):
-         print("\n<=========================================== PHASE TWO ===============================================>\n")
+         print("\n" + "=" * 60)
+         print(" PHASE TWO  ".center(60))
+         print("=" * 60)
+         print("/n")
          self.LP.phase1 = False
          z = [0] * self.LP.table_cols
          for i in range(len(self.input.zRow)):
