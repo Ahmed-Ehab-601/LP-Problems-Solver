@@ -172,24 +172,24 @@ class TwoPhase(Solver):
 # )
 
 
-constraints = [
-    Constrain([3,1], "=", 3, 1),
-    Constrain([4,3], ">=", 6, 1),
-    Constrain([1,2], "<=",4, 1)
-]
+# constraints = [
+#     Constrain([3,1], "=", 3, 1),
+#     Constrain([4,3], ">=", 6, 1),
+#     Constrain([1,2], "<=",4, 1)
+# ]
 
-input_data = Input( 
-    n=2,
-    m=3,
-    constraints=constraints,
-    zRow=[4,1],
-    maximize=True,   
-    isGoal=False,  
-    unrestricted=[False, False],
-    symbol_map={0: "x1", 1: "x2"}
-)
+# input_data = Input( 
+#     n=2,
+#     m=3,
+#     constraints=constraints,
+#     zRow=[4,1],
+#     maximize=True,   
+#     isGoal=False,  
+#     unrestricted=[False, False],
+#     symbol_map={0: "x1", 1: "x2"}
+# )
 
-solver = TwoPhase(input_data)
-solver.SetLinearProblem()
-solver.solve()
-print(solver.LP.state)
+# solver = TwoPhase(input_data)
+# solver.SetLinearProblem()
+# solver.solve()
+# print(solver.LP.state)

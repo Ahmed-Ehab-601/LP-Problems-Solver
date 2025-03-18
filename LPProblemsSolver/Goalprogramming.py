@@ -121,11 +121,12 @@ class GoalProgramming(Solver):
           self.coresimplex.solve()
           if(self.LP.state == "optimal"):
             self.LP.satisfied[zIndex] = True
-            print(self.LP.satisfied)
             print("satisfied goal :",zIndex+1)
+            print("")
           else:
                print("can't can satisfy goal :",zIndex+1) 
-               print(self.LP.satisfied)
+               print("")
+             
                
            
          #  for i in range(len(satisfied)):

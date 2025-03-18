@@ -107,10 +107,14 @@ class BigM(Solver):
          else:
             self.LP.tableau[0, j + col_offset] = -self.input.zRow[j]  
 
+      print("Initial Tableau")
+      print("")
       self.coresimplex.DecorateSteps(self.LP)
       return self.LP.tableau
    
-   def solve(self):   
+   def solve(self): 
+      print("Update Z Row")
+      print("")  
       for i in range(len(self.LP.basic_variables)):
             row = i + 1
             col = self.LP.basic_variables[i]
@@ -127,21 +131,59 @@ class BigM(Solver):
       print(self.LP.state)
                   
  
+# constraints = [
+#     Constrain([2,1], "<=", 2, 1),
+#     Constrain([3,4], ">=", 12, 1),
+# ]
+
+# input_data = Input(  #infeasible
+#     n=2,
+#     m=2,
+#     constraints=constraints,
+#     zRow=[3, 2],
+#     maximize=True,   
+#     isGoal=False,  
+#     unrestricted=[False, False],
+#     symbol_map={0: "x1", 1: "x2"}
+# )
+
+# solver = BigM(input_data)
+# solver.SetLinearProblem()
+# solver.solve()
+
+
 constraints = [
-    Constrain([2,1], "<=", 2, 1),
-    Constrain([3,4], ">=", 12, 1),
+    Constrain([3,1], "=", 3, 1),
+    Constrain([4,3], ">=", 6, 1),
+    Constrain([1,2], "<=",4, 1)
 ]
 
-input_data = Input( 
+input_data = Input(  #optimal don't know answer
     n=2,
-    m=2,
+    m=3,
     constraints=constraints,
-    zRow=[3, 2],
-    maximize=True,   
+    zRow=[4,1],
+    maximize=False,   
     isGoal=False,  
     unrestricted=[False, False],
     symbol_map={0: "x1", 1: "x2"}
 )
+
+# constraints = [
+#     Constrain([1,1, 1], "=", 7, 1),
+#     Constrain([2,-5, 1], ">=", 10, 1),
+# ]
+
+# input_data = Input( ## sheet ex done
+#     n=3,
+#     m=2,
+#     constraints=constraints,
+#     zRow=[1, 2,1],
+#     maximize=True,   
+#     isGoal=False,  
+#     unrestricted=[False, False,False],
+#     symbol_map={0: "x1", 1: "x2", 2: "x3"}
+# )
 
 solver = BigM(input_data)
 solver.SetLinearProblem()

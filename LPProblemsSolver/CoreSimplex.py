@@ -48,10 +48,7 @@ class CoreSimplex:
     def solve(self):
         if self.LP is None:
             return
-        pprint(self.LP.tableau)
-        print(self.LP.variables)
-        print(self.LP.basic_variables)
-        print(self.LP.non_basic_variables)
+        self.DecorateSteps(self.LP)
         cuurent_sol = None
         entering = self.getEntering(self.LP.tableau,self.LP.maximize,self.LP.objective_index,self.LP.known_variables)
         while entering != -1:
@@ -71,14 +68,11 @@ class CoreSimplex:
                 self.LP.state = "unbounded"
                 break
             #swap col_leaving(basic) with entering(non basic)
-            print("now entering =",entering,"leaving =",leaving,"col_leaving =",col_leaving)
             print(self.LP.variables[col_leaving],"Leaves <-> Enters",self.LP.variables[entering])
+            print("")
             self.LP.basic_variables[leaving-self.LP.objective_count] = entering
             self.LP.non_basic_variables = [col_leaving if x == entering else x for x in self.LP.non_basic_variables]
-            pprint(self.LP.tableau)
-            print(self.LP.variables)
-            print(self.LP.basic_variables)
-            print(self.LP.non_basic_variables)
+            self.DecorateSteps(self.LP)
             entering = self.getEntering(self.LP.tableau,self.LP.maximize,self.LP.objective_index,self.LP.known_variables)
         if(entering == -1):
             self.LP.state = "optimal"
@@ -94,8 +88,7 @@ class CoreSimplex:
         return True  
  
     def DecorateSteps(self,LP:LinearProblem):
-        pprint(LP.tableau)
-        headers = ["Variables"] + [LP.variables[i] for i in LP.variables]  
+        headers = ["Basic"] + [LP.variables[i] for i in LP.variables]  
         headers.append("RHS")  
         table_data = []
         for i in range(LP.objective_count):  
@@ -110,6 +103,7 @@ class CoreSimplex:
             table_data.append([basic_var] + row)
 
         print(tabulate(table_data, headers=headers, tablefmt="grid"))
+        print("")
 
 # def main():
 #     #test get leaving

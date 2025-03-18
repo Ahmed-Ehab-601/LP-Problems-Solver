@@ -56,9 +56,13 @@ class Simplex(Solver):
        
        
     def solve(self):
+       print("Initial Tableau")
+       print("")
        self.coresimplex.LP = self.LP
        self.LP = self.coresimplex.solve()
        print(self.LP.state)
+       #self.printSolution()
+       
     
 # def test():  
 #    input = Input( #optimal easy simplex
