@@ -120,7 +120,7 @@ class TwoPhase(Solver):
          for j in range(len(z)):
             self.LP.tableau[0, j] = z[j]
     
-         for i in range(len(self.atrificalVariables)-1,-1,-1):# Remove Cols 
+         for i in range(len(self.atrificalVariables)-1,-1,-1):
              self.LP.tableau.col_del(self.atrificalVariables[i])
              self.LP.table_cols-=1
              for j in range(self.LP.m):

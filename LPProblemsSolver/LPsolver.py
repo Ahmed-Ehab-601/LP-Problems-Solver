@@ -3,6 +3,8 @@ from TwoPhase import TwoPhase
 from BigM import BigM
 from Input import Input
 from Constrain import Constrain
+import Goalprogramming
+import Simplex
 class LPSolver:
     def __init__(self): 
       self.input = None
@@ -10,7 +12,7 @@ class LPSolver:
 
     def check_constraints(self):
         for constraint in self.input.constraints:  
-           if constraint in ['>=', '=']:  
+            if constraint in ['>=', '=']:  
                method = input("Enter which method to use (bigm, 2phase): ").lower()
 
                if method == 'bigm':
@@ -20,8 +22,16 @@ class LPSolver:
                    return TwoPhase(self.input)  
 
                else:
-                   return None  
-        pass
+                   return None
+            elif constraint == '<=':
+    
+
+                if(self.input.isGoal == True): 
+                    return Goalprogramming(self.input)  
+
+                else:
+                    return Simplex(self.input)  
+
     def solve(self) :
        pass
 

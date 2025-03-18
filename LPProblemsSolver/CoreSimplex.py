@@ -77,7 +77,7 @@ class CoreSimplex:
         return self.LP
     def DecorateSteps(self):
         pass
-    
+   
 # def main():
 #     #test get leaving
 #     core = CoreSimplex()
