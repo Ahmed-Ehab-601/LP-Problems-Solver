@@ -26,10 +26,8 @@ class BigM(Solver):
       total_slack = 0 
       unrestricted_count = self.input.unrestricted.count(True)  
       max_coeff = max(abs(c) for c in self.input.zRow)  
-      if self.LP.maximize == True:     
-        self.LP.known_variables["M"] = 100*max_coeff
-      else: 
-        self.LP.known_variables["M"] = -100*max_coeff
+      self.LP.known_variables["M"] = 100*max_coeff
+
       col_offset = 0 
       for j in range(self.LP.n):
                 
@@ -81,6 +79,8 @@ class BigM(Solver):
                self.LP.tableau[i + 1, artificial_index] = 1
                self.LP.basic_variables[i] = artificial_index
                self.LP.tableau[0, artificial_index] = "M" 
+               if not self.LP.maximize == True:
+                  self.LP.tableau[0, artificial_index] = -self.LP.tableau[0, artificial_index]
                self.LP.variables[artificial_index]=self.subscribts.alist[i] 
                artificial_index += 1  
 
@@ -130,25 +130,23 @@ class BigM(Solver):
       
                   
  
-constraints = [
-    Constrain([2,1], "<=", 2, 1),
-    Constrain([3,4], ">=", 12, 1),
-]
+# constraints = [
+#     Constrain([2,1], "<=", 2, 1),
+#     Constrain([3,4], ">=", 12, 1),
+# ]
 
-input_data = Input(  #infeasible
-    n=2,
-    m=2,
-    constraints=constraints,
-    zRow=[3, 2],
-    maximize=True,   
-    isGoal=False,  
-    unrestricted=[False, False],
-    symbol_map={0: "x1", 1: "x2"}
-)
+# input_data = Input(  #infeasible
+#     n=2,
+#     m=2,
+#     constraints=constraints,
+#     zRow=[3, 2],
+#     maximize=True,   
+#     isGoal=False,  
+#     unrestricted=[False, False],
+#     symbol_map={0: "x1", 1: "x2"}
+# )
 
-solver = BigM(input_data)
-solver.SetLinearProblem()
-solver.solve()
+
 
 
 
@@ -202,7 +200,7 @@ solver.solve()
 #       unrestricted=[False,False],
 #       symbol_map={0: "x1", 1: "x2"}
 # )
-# input_data = Input( #reference !!infeasible
+# input_data = Input( #reference !!infeasible true but m not -ve for debbuging
 #       n=2,
 #       m=3,
 #       constraints=[
