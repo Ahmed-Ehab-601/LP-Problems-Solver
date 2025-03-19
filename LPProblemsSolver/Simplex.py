@@ -65,7 +65,7 @@ class Simplex(Solver):
        
        
     
-# def test():  
+def test():  
 #    input = Input( #optimal easy simplex
 #     n=2,
 #     m=4,
@@ -101,17 +101,17 @@ class Simplex(Solver):
 #     unrestricted=[False,False],
 #     symbol_map={0: "x1", 1: "x2"}
 # )
-#    input = Input( #unrerstricted
-#     n=2,
-#     m=2,
-#     constraints=[
-#         Constrain([5, -1], "<=", 30, 1),
-#         Constrain([1, 0], "<=", 5, 1)
-#     ],
-#     zRow=[30,-4],maximize=True,isGoal=False,
-#     unrestricted=[False,True],
-#     symbol_map={0: "x1", 1: "x2"}
-# )
+   # input = Input( #unrerstricted
+   #    n=2,
+   #    m=2,
+   #    constraints=[
+   #       Constrain([5, -1], "<=", 30, 1),
+   #       Constrain([1, 0], "<=", 5, 1)
+   #    ],
+   #    zRow=[30,-4],maximize=True,isGoal=False,
+   #    unrestricted=[False,True],
+   #    symbol_map={0: "x1", 1: "x2"}
+   # )
 
 #    input = Input( #try min
 #     n=4,
@@ -126,15 +126,15 @@ class Simplex(Solver):
 #     symbol_map={0: "x1", 1: "x2",2:"x3",3:"x4"}
 # )
 
-#    x = Simplex(input)
-#    x.SetLinearProblem()
+   x = Simplex(input)
+   x.SetLinearProblem()
 # #    # pprint(x.LP.tableau)
 # #    # print(x.LP.variables)
 # #    # print(x.LP.basic_variables)
 # #    # print(x.LP.non_basic_variables)
-#    x.solve()
+   x.solve()
    
 
-# test()         
+test()         
          
 #alldone

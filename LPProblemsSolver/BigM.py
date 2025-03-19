@@ -130,25 +130,25 @@ class BigM(Solver):
       
                   
  
-# constraints = [
-#     Constrain([2,1], "<=", 2, 1),
-#     Constrain([3,4], ">=", 12, 1),
-# ]
+constraints = [
+    Constrain([2,1], "<=", 2, 1),
+    Constrain([3,4], ">=", 12, 1),
+]
 
-# input_data = Input(  #infeasible
-#     n=2,
-#     m=2,
-#     constraints=constraints,
-#     zRow=[3, 2],
-#     maximize=True,   
-#     isGoal=False,  
-#     unrestricted=[False, False],
-#     symbol_map={0: "x1", 1: "x2"}
-# )
+input_data = Input(  #infeasible
+    n=2,
+    m=2,
+    constraints=constraints,
+    zRow=[3, 2],
+    maximize=True,   
+    isGoal=False,  
+    unrestricted=[False, False],
+    symbol_map={0: "x1", 1: "x2"}
+)
 
-# solver = BigM(input_data)
-# solver.SetLinearProblem()
-# solver.solve()
+solver = BigM(input_data)
+solver.SetLinearProblem()
+solver.solve()
 
 
 
@@ -168,7 +168,52 @@ class BigM(Solver):
 #     unrestricted=[False, False,False],
 #     symbol_map={0: "x1", 1: "x2", 2: "x3"}
 # )
-
+# input_data = Input( #unrerstricted x1=5 x2=-5
+#       n=2,
+#       m=2,
+#       constraints=[
+#          Constrain([5, -1], "<=", 30, 1),
+#          Constrain([1, 0], "<=", 5, 1)
+#       ],
+#       zRow=[30,-4],maximize=True,isGoal=False,
+#       unrestricted=[False,True],
+#       symbol_map={0: "x1", 1: "x2"}
+# )
+# input_data = Input( #unboundeded
+#       n=2,
+#       m=2,
+#       constraints=[
+#          Constrain([7, 2], ">=", 28, 1),
+#          Constrain([2, 12], ">=", 24, 1)
+#       ],
+#       zRow=[50,100],maximize=True,isGoal=False,
+#       unrestricted=[False,False],
+#       symbol_map={0: "x1", 1: "x2"}
+# )
+# input_data = Input( #reference !! done ☺️ 25,5,5
+#       n=2,
+#       m=3,
+#       constraints=[
+#          Constrain([0.5, 0.25], "<=", 4, 1),
+#          Constrain([1, 3], ">=", 20, 1),
+#          Constrain([1, 1], "=", 10, 1)
+#       ],
+#       zRow=[2,3],maximize=False,isGoal=False,
+#       unrestricted=[False,False],
+#       symbol_map={0: "x1", 1: "x2"}
+# )
+# input_data = Input( #reference !!infeasible
+#       n=2,
+#       m=3,
+#       constraints=[
+#          Constrain([0.5, 0.25], "<=", 4, 1),
+#          Constrain([1, 3], ">=", 36, 1),
+#          Constrain([1, 1], "=", 10, 1)
+#       ],
+#       zRow=[2,3],maximize=False,isGoal=False,
+#       unrestricted=[False,False],
+#       symbol_map={0: "x1", 1: "x2"}
+# )
 # solver = BigM(input_data)
 # solver.SetLinearProblem()
 # solver.solve()

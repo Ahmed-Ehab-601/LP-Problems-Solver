@@ -21,6 +21,10 @@ class TwoPhase(Solver):
         self.LP.tableau = self.get_table()
         self.LP.maximize = self.input.maximize
         self.coresimplex=CoreSimplex(self.LP)
+        pprint(self.LP.tableau)
+        print(self.LP.variables)
+        print(self.LP.non_basic_variables)
+        print(self.LP.basic_variables)
 
     def solve(self):
         if self.phase1():
@@ -128,7 +132,7 @@ class TwoPhase(Solver):
          print(" PHASE TWO  ".center(60))
          self.LP.steps += "PHASE TWO\n\n"
          print("=" * 60)
-         print("/n")
+         print("\n")
          self.LP.phase1 = False
          z = [0] * self.LP.table_cols
          for i in range(len(self.input.zRow)):
@@ -233,9 +237,61 @@ class TwoPhase(Solver):
 #     isGoal=False,  
 #     unrestricted=[False, False],
 #     symbol_map={0: "x1", 1: "x2"}
+#)
+# input_data = Input( #unrerstricted ## table view has error
+#       n=2,
+#       m=2,
+#       constraints=[
+#          Constrain([5, -1], "<=", 30, 1),
+#          Constrain([1, 0], "<=", 5, 1)
+#       ],
+#       zRow=[30,-4],maximize=True,isGoal=False,
+#       unrestricted=[False,True],
+#       symbol_map={0: "x1", 1: "x2"}
+#    )
+
+# constraints = [
+#     Constrain([2,1], "<=", 2, 1),
+#     Constrain([3,4], ">=", 12, 1),
+# ]
+
+# input_data = Input(  #infeasible
+#     n=2,
+#     m=2,
+#     constraints=constraints,
+#     zRow=[3, 2],
+#     maximize=True,   
+#     isGoal=False,  
+#     unrestricted=[False, False],
+#     symbol_map={0: "x1", 1: "x2"}
 # )
 
-# solver = TwoPhase(input_data)
-# solver.SetLinearProblem()
-# solver.solve()
+# input_data = Input( #unboundeded
+#       n=2,
+#       m=2,
+#       constraints=[
+#          Constrain([7, 2], ">=", 28, 1),
+#          Constrain([2, 12], ">=", 24, 1)
+#       ],
+#       zRow=[50,100],maximize=True,isGoal=False,
+#       unrestricted=[False,False],
+#       symbol_map={0: "x1", 1: "x2"}
+# )
+input_data = Input( #reference !! done ☺️
+      n=2,
+      m=3,
+      constraints=[
+         Constrain([0.5, 0.25], "<=", 4, 1),
+         Constrain([1, 3], ">=", 20, 1),
+         Constrain([1, 1], "=", 10, 1)
+      ],
+      zRow=[2,3],maximize=False,isGoal=False,
+      unrestricted=[False,False],
+      symbol_map={0: "x1", 1: "x2"}
+)
+
+solver = TwoPhase(input_data)
+solver.SetLinearProblem()
+
+solver.solve()
 

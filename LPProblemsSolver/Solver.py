@@ -41,9 +41,11 @@ class Solver(ABC):
             var=self.LP.variables[i]
             if var.startswith("x"):
                 value = self.LP.tableau[self.LP.basic_variables.index(i)+self.LP.objective_count, self.LP.table_cols-1]
-                if var == self.subscribts.xpluslist[i]:
+                if var.endswith("\u207A"):
+                    var = var.replace("\u207A", "")
                     display_value = f"{value}"
-                elif var == self.subscribts.xminuslist[i]:
+                elif var.endswith("\u207B"):
+                    var = var.replace("\u207B", "")
                     display_value = f"-{value}"
                 else:
                     display_value = f"{value}"
