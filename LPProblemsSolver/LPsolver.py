@@ -35,10 +35,11 @@ class LPSolver:
                     return Simplex(self.input)  
 
     def solve(self) :
-        self.get_input()
+        #self.get_input()
         self.solver = self.check_constraints()
         self.solver.SetLinearProblem()
         self.solver.solve()
+        return self.solver.LP.steps
 
     def get_input(self):
         n=int(input("Enter number of desction variables : "))
@@ -112,5 +113,5 @@ class LPSolver:
 
         print("\n=== END OF INPUT SUMMARY ===\n")
 
-l=LPSolver()
-l.solve()
+# l=LPSolver()
+# l.solve()

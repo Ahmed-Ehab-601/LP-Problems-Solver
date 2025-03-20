@@ -79,8 +79,8 @@ class BigM(Solver):
                self.LP.tableau[i + 1, artificial_index] = 1
                self.LP.basic_variables[i] = artificial_index
                self.LP.tableau[0, artificial_index] = "M" 
-               if not self.LP.maximize == True:
-                  self.LP.tableau[0, artificial_index] = -self.LP.tableau[0, artificial_index]
+               if not self.LP.maximize:
+                  self.LP.tableau[0, artificial_index] = -1 * self.LP.tableau[0, artificial_index]
                self.LP.variables[artificial_index]=self.subscribts.alist[i] 
                artificial_index += 1  
 
@@ -88,6 +88,8 @@ class BigM(Solver):
                self.LP.tableau[i + 1, artificial_index] = 1
                self.LP.basic_variables[i] = artificial_index
                self.LP.tableau[0, artificial_index] = "M"
+               if not self.LP.maximize:
+                  self.LP.tableau[0, artificial_index] = -1* self.LP.tableau[0, artificial_index]
                self.LP.variables[artificial_index]=self.subscribts.alist[i] 
  
                artificial_index += 1
