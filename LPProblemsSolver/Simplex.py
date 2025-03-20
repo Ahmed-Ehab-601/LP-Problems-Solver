@@ -60,7 +60,7 @@ class Simplex(Solver):
        self.coresimplex.LP = self.LP
        self.LP = self.coresimplex.solve()
        self.printSolution()
-       with open("Simplex.txt", "w") as file:
+       with open("Simplex.txt", "w", encoding='utf-8') as file:
           file.write(self.LP.steps)
        
        

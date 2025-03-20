@@ -7,8 +7,9 @@ from CoreSimplex import CoreSimplex
 from SubscriptSuperscriptLists import SubscriptSuperscriptLists
 
 class TwoPhase(Solver):
-    
     atrificalVariables=[]
+    num_unRes=None
+    needphase1=False
     def SetLinearProblem(self):
         self.LP = LinearProblem()
         self.LP.n = self.input.n
@@ -20,15 +21,24 @@ class TwoPhase(Solver):
         self.LP.basic_variables = [None] * self.LP.m 
         self.LP.tableau = self.get_table()
         self.LP.maximize = self.input.maximize
-        self.coresimplex=CoreSimplex(self.LP)
 
+        self.coresimplex=CoreSimplex(self.LP)
+        # pprint(self.LP.tableau)
+        # print(self.LP.variables)
+        # print(self.LP.non_basic_variables)
+        # print(self.LP.basic_variables)
     def solve(self):
-        if self.phase1():
-            if self.phase2():
-                return
+        if(self.needphase1):
+            if self.phase1():
+               self.phase2()       
+        else:
+            print("No need to Phase one\n")
+            self.phase2()
+                  
         self.printSolution()
-        with open("TwoPhase.txt", "w") as file:
-            file.write(self.LP.steps)
+        with open('TwoPhase.txt', 'w', encoding='utf-8') as file:
+           file.write(self.LP.steps)
+
       
     def get_table(self):
         self.subscribts=SubscriptSuperscriptLists()
@@ -36,11 +46,12 @@ class TwoPhase(Solver):
         for constraint in self.input.constraints:
             if constraint.type == ">=":
                 num_artificiale += 1
-        num_unRes=0
+        self.num_unRes=0
         for unrestricted in self.input.unrestricted:
             if unrestricted:
-                num_unRes+=1
+                self.num_unRes+=1
                 num_artificiale += 1
+
 
         self.LP.table_cols = self.input.m + num_artificiale + self.input.n + 1
         self.LP.table_rows = self.input.m + 1
@@ -50,44 +61,49 @@ class TwoPhase(Solver):
         i = 1  
         z_artificial = [0] * self.LP.table_cols
         slack=0
+      
         for constraint in self.input.constraints:
+            k=0
             for j in range(self.input.n):
-                m[i, j] = constraint.coef[j]
                 if self.input.unrestricted[j]:
-                    self.LP.variables[j] = self.subscribts.xpluslist[j]
-                    m[i, self.LP.n+j] = -1 * constraint.coef[j]
-                    self.LP.variables[self.LP.n+j] = self.subscribts.xminuslist[j]
-                    if self.LP.non_basic_variables.count(self.LP.n+j) == 0:
-                        self.LP.non_basic_variables.append(self.LP.n+j)
-                    
-                  
-                   
+                    m[i, k] = constraint.coef[j]
+                    self.LP.variables[k] = self.subscribts.xpluslist[j]
+                    k+=1
+                    m[i,k] = -1 * constraint.coef[j]
+                    self.LP.variables[k] = self.subscribts.xminuslist[j]
+                    if self.LP.non_basic_variables.count(k) == 0:
+                        self.LP.non_basic_variables.append(k)
+                
+                else :
+                    m[i,k] = constraint.coef[j]
+                    self.LP.variables[k] = self.subscribts.xlist[j]
+                k+=1
                 
             if constraint.type == "<=":
-                m[i,self.LP.n+slack+num_unRes] = 1
-                self.LP.basic_variables[i - 1]=self.LP.n+slack+num_unRes
-                self.LP.variables[self.LP.n+slack+num_unRes] = self.subscribts.slist[i-1]
+                m[i,self.LP.n+slack+self.num_unRes] = 1
+                self.LP.basic_variables[i - 1]=self.LP.n+slack+self.num_unRes
+                self.LP.variables[self.LP.n+slack+self.num_unRes] = self.subscribts.slist[i-1]
                 slack+=1
 
             elif constraint.type == ">=":
-                m[i,self.LP.n+slack+num_unRes] = -1
-                self.LP.variables[self.LP.n+slack+num_unRes] = self.subscribts.elist[i-1]
-                self.LP.non_basic_variables.append(self.LP.n+slack+num_unRes)
+                m[i,self.LP.n+slack+self.num_unRes] = -1
+                self.LP.variables[self.LP.n+slack+self.num_unRes] = self.subscribts.elist[i-1]
+                self.LP.non_basic_variables.append(self.LP.n+slack+self.num_unRes)
                 slack+=1
-                m[i,self.LP.n+slack+num_unRes] = 1
-                self.LP.basic_variables[i - 1] =self.LP.n+slack+num_unRes
-                self.LP.variables[self.LP.n+slack+num_unRes] = self.subscribts.alist[i-1]
-                self.atrificalVariables.append(self.LP.n+slack+num_unRes)
-                z_artificial[self.LP.n+slack+num_unRes] = -1
+                m[i,self.LP.n+slack+self.num_unRes] = 1
+                self.LP.basic_variables[i - 1] =self.LP.n+slack+self.num_unRes
+                self.LP.variables[self.LP.n+slack+self.num_unRes] = self.subscribts.alist[i-1]
+                self.atrificalVariables.append(self.LP.n+slack+self.num_unRes)
+                z_artificial[self.LP.n+slack+self.num_unRes] = -1
                 slack+=1
            
 
             elif constraint.type == "=":
-                m[i,self.LP.n+slack+num_unRes] = 1
-                self.LP.basic_variables[i - 1] = self.LP.n+slack+num_unRes
-                self.LP.variables[self.LP.n+slack+num_unRes] = self.subscribts.alist[i-1]
-                self.atrificalVariables.append(self.LP.n+slack+num_unRes)
-                z_artificial[self.LP.n+slack+num_unRes] = -1
+                m[i,self.LP.n+slack+self.num_unRes] = 1
+                self.LP.basic_variables[i - 1] = self.LP.n+slack+self.num_unRes
+                self.LP.variables[self.LP.n+slack+self.num_unRes] = self.subscribts.alist[i-1]
+                self.atrificalVariables.append(self.LP.n+slack+self.num_unRes)
+                z_artificial[self.LP.n+slack+self.num_unRes] = -1
                 slack += 1
 
             m[i, self.LP.table_cols - 1] = constraint.solution
@@ -96,6 +112,8 @@ class TwoPhase(Solver):
 
         for j in range(len(z_artificial)):
             m[0, j] = z_artificial[j]
+        if len(self.atrificalVariables) > 0:
+            self.needphase1=True
         return m
 
     def phase1(self):
@@ -131,8 +149,14 @@ class TwoPhase(Solver):
          print("\n")
          self.LP.phase1 = False
          z = [0] * self.LP.table_cols
+         k=0
          for i in range(len(self.input.zRow)):
-             z[i]= -self.input.zRow[i]
+             z[k]= -self.input.zRow[i]
+             k+=1
+             if(self.input.unrestricted[i]):
+                 z[k]= self.input.zRow[i]
+                 k+=1
+
         
          print("Insert Original Objective Function..........\n")
          self.LP.steps += "Insert Original Objective Function\n\n"
@@ -233,8 +257,8 @@ class TwoPhase(Solver):
 #     isGoal=False,  
 #     unrestricted=[False, False],
 #     symbol_map={0: "x1", 1: "x2"}
-#)
-input_data = Input( #unrerstricted ## table view has error
+# )
+input_data = Input( #unrestricted objective function
       n=2,
       m=2,
       constraints=[
@@ -246,6 +270,18 @@ input_data = Input( #unrerstricted ## table view has error
       symbol_map={0: "x1", 1: "x2"}
    )
 
+# input_data = Input( #unrestricted 
+#       n=2,
+#       m=3,
+#       constraints=[
+#          Constrain([3, 2], "<=", 30, 1),
+#          Constrain([2, 4], "<=", 24, 1),
+#          Constrain([0, 1], ">=", 4, 1)
+#       ],
+#       zRow=[5,3],maximize=True,isGoal=False,
+#       unrestricted=[True,False],
+#       symbol_map={0: "x1", 1: "x2"}
+# )
 # constraints = [
 #     Constrain([2,1], "<=", 2, 1),
 #     Constrain([3,4], ">=", 12, 1),

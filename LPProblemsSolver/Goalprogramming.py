@@ -130,7 +130,7 @@ class GoalProgramming(Solver):
                print("can't can satisfy goal : ",zIndex+1,"\n") 
                self.LP.steps += "can't can satisfy goal : "+str(zIndex+1)+"\n\n"
        self.printSolution()
-       with open("Goal.txt", "w") as file:
+       with open("Goal.txt", "w", encoding='utf-8') as file:
          file.write(self.LP.steps)       
        
     def updateZRows(self):
