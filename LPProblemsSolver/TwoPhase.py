@@ -347,9 +347,6 @@ class TwoPhase(Solver):
 
 # solver = TwoPhase(input_data)
 # solver.SetLinearProblem()
-# solver = TwoPhase(input_data)
-# solver.SetLinearProblem()
-
 # solver.solve()
 # solver.solve()
 

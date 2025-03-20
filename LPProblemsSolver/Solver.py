@@ -2,9 +2,11 @@ from abc import ABC, abstractmethod
 from CoreSimplex import CoreSimplex
 from LinearProblem import LinearProblem
 from SubscriptSuperscriptLists import SubscriptSuperscriptLists
-import Input
+import Input as Input
+
+
 class Solver(ABC):
-    def __init__(self, input:Input): 
+    def __init__(self, input: Input):
         self.input = input
         self.LP = LinearProblem()
         self.coresimplex= CoreSimplex()   
@@ -31,8 +33,18 @@ class Solver(ABC):
         self.LP.steps += "=" * 40+"\n"
         
         if not self.input.isGoal:
-            print(f"► Optimal Solution: {self.LP.tableau[0, self.LP.table_cols-1]}\n")
-            self.LP.steps += f"\n► Optimal Solution: {self.LP.tableau[0, self.LP.table_cols-1]}\n\n"
+            value = str(self.LP.tableau[0, self.LP.table_cols-1])
+            try:
+                value = float(value)
+                if value.is_integer():
+                    value = int(value)
+                else:
+                    value = round(value, 4)
+                    
+            except (ValueError, TypeError):
+                value = str(value)
+            print(f"► Optimal Solution: {value}\n")
+            self.LP.steps += f"\n► Optimal Solution: {value}\n\n"
 
         print("► Optimal Values:")
         self.LP.steps += "► Optimal Values:\n\n"
@@ -40,7 +52,16 @@ class Solver(ABC):
         for i in self.LP.basic_variables:
             var=self.LP.variables[i]
             if var.startswith("x"):
-                value = self.LP.tableau[self.LP.basic_variables.index(i)+self.LP.objective_count, self.LP.table_cols-1]
+                value = str(self.LP.tableau[self.LP.basic_variables.index(i)+self.LP.objective_count, self.LP.table_cols-1])
+                try:
+                    value = float(value)
+                    if value.is_integer():
+                     value = int(value)
+                    else:
+                        value = round(value, 4)
+                      
+                except (ValueError, TypeError):
+                    value = str(value)
                 if var.endswith("\u207A"):
                     var = var.replace("\u207A", "")
                     display_value = f"{value}"

@@ -1,9 +1,9 @@
-
-from LinearProblem import LinearProblem
 from SubscriptSuperscriptLists import SubscriptSuperscriptLists
 from LinearProblem import LinearProblem
 from tabulate import tabulate
-from sympy import Matrix,pprint
+from sympy import Matrix
+
+
 class CoreSimplex:
     def __init__(self,LP: LinearProblem=None):
         if LP is not None:
@@ -88,24 +88,41 @@ class CoreSimplex:
                 return False
         return True  
  
+    
     def DecorateSteps(self,LP:LinearProblem):
         headers = ["Basic"] + [LP.variables[i] for i in LP.variables]  
         headers.append("RHS")  
         table_data = []
-        for i in range(LP.objective_count):  
+        for i in range(LP.objective_count):
+            formatted_row = list(LP.tableau[i, :]) 
+            formatted_row = [self.format_sympy_expr(val) for val in formatted_row]     
             if(LP.isGoal==False):
-                z_row = ["Z" if not LP.phase1 else "r"] + list(self.LP.tableau[0, :]) 
+                z_row = ["Z" if not LP.phase1 else "r"] + formatted_row
             else: 
-                z_row = [self.subscribts.zlist[i]] + list(LP.tableau[i, :]) 
+                z_row = [self.subscribts.zlist[i]] + formatted_row
             table_data.append(z_row)
-       
+
         for i, row in enumerate(LP.tableau[LP.objective_count:, :].tolist()): 
             basic_var = LP.variables.get(LP.basic_variables[i], f"Var {LP.basic_variables[i]}")
+            row = [self.format_sympy_expr(val) for val in row]
             table_data.append([basic_var] + row)
 
         self.LP.steps += tabulate(table_data, headers=headers, tablefmt="grid")+'\n'+'\n'
         print(tabulate(table_data, headers=headers, tablefmt="grid"))
         print("")
+    def format_sympy_expr(self, expr):
+        if expr == 0:
+            return 0
+        expr_str = str(expr)
+        expr_str = expr_str.replace('*', '')
+        try:
+            numeric_val = float(expr_str)
+            if numeric_val.is_integer():
+                return int(numeric_val)
+            else:
+                return round(numeric_val, 4)
+        except (ValueError, TypeError):
+            return expr_str
 
 # def main():
 #     #test get leaving
