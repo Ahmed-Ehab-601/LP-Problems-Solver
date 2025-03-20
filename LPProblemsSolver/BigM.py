@@ -127,8 +127,8 @@ class BigM(Solver):
                   self.LP.state = "Infeasible"
                   break
       self.printSolution()
-      with open("BigM.txt", "w", encoding='utf-8') as file:
-         file.write(self.LP.steps)
+      print("Solved with Big M Method\n")
+
       
                   
  

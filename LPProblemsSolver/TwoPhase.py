@@ -36,8 +36,7 @@ class TwoPhase(Solver):
             self.phase2()
                   
         self.printSolution()
-        with open('TwoPhase.txt', 'w', encoding='utf-8') as file:
-           file.write(self.LP.steps)
+        print("Solved with Two Phase Method\n")
 
       
     def get_table(self):
@@ -196,7 +195,7 @@ class TwoPhase(Solver):
                   self.LP.non_basic_variables[i]=index-prevAritificalVariables[index]
          self.LP.variables = handledVar
        
-          #      for j in range(self.LP.m):
+        #      for j in range(self.LP.m):
         #          if(self.LP.basic_variables[j]==self.atrificalVariables[i]):
         #              self.LP.tableau.row_del(j+1)
         #              self.LP.table_rows-=1
