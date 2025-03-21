@@ -76,10 +76,6 @@ class LPSolverGUI(QMainWindow):
         self.problem_type_radio.addButton(self.normal_lp_radio)
         self.problem_type_radio.addButton(self.goal_lp_radio)
         
-        # Connect the radio buttons to update UI
-        self.normal_lp_radio.toggled.connect(self.update_problem_form)
-        self.goal_lp_radio.toggled.connect(self.update_problem_form)
-        
         problem_type_layout.addWidget(self.normal_lp_radio)
         problem_type_layout.addWidget(self.goal_lp_radio)
         
@@ -147,12 +143,6 @@ class LPSolverGUI(QMainWindow):
         solve_btn.clicked.connect(self.solve_problem)
         layout.addWidget(solve_btn)
     
-    def update_problem_form(self):
-        # This will be called when the problem type radio changes
-        # If we've already generated a form, regenerate it
-        if hasattr(self, 'problem_form_layout') and self.problem_form_layout.count() > 0:
-            self.generate_problem_form()
-    
     def setup_solution_tab(self, layout):
         # Create a container widget to center the solution
         container = QWidget()
@@ -163,12 +153,11 @@ class LPSolverGUI(QMainWindow):
         self.solution_output.setReadOnly(True)
         font = QFont("Courier New", 12)  # Monospaced font for better table rendering
         self.solution_output.setFont(font)
-
         self.solution_output.setAlignment(Qt.AlignCenter)  # Center-align text
         
         # Add solution output to container with margins for centering
         container_layout.addWidget(self.solution_output)
-        container_layout.setContentsMargins(10, 10, 10, 10)  # Add margins for visual centering
+        container_layout.setContentsMargins(50, 50, 50, 50)  # Add margins for visual centering
         
         # Add the container to the main layout
         layout.addWidget(container, 1)  # Use stretch factor for vertical centering
@@ -257,17 +246,9 @@ class LPSolverGUI(QMainWindow):
             rhs_input.setFixedWidth(50)
             row_layout.addWidget(rhs_input)
             
-            # Goal checkbox and priority input for goal programming
-            is_goal_checkbox = None
+            # Priority input for goal programming
             priority_input = None
-            
             if is_goal:
-                # Is Goal checkbox
-                is_goal_checkbox = QCheckBox("Is Goal")
-                is_goal_checkbox.setChecked(True)
-                row_layout.addWidget(is_goal_checkbox)
-                
-                # Priority
                 row_layout.addWidget(QLabel("Priority:"))
                 priority_input = QSpinBox()
                 priority_input.setRange(1, 9999)  # Allow any positive integer
@@ -282,7 +263,6 @@ class LPSolverGUI(QMainWindow):
                 'coefficients': coefficient_inputs,
                 'type': type_combo,
                 'rhs': rhs_input,
-                'is_goal': is_goal_checkbox,
                 'priority': priority_input
             })
             
@@ -314,7 +294,7 @@ class LPSolverGUI(QMainWindow):
             # Collect all inputs
             n_vars = self.var_count.value()
             n_constraints = self.constraint_count.value()
-            is_goal_program = self.goal_lp_radio.isChecked()
+            is_goal = self.goal_lp_radio.isChecked()
             maximize = self.objective_type.currentText() == "Maximize"
             
             # Get objective function coefficients
@@ -342,16 +322,10 @@ class LPSolverGUI(QMainWindow):
                 
                 # Get priority (for goal programming)
                 priority = 0
-                if is_goal_program and row['priority']:
+                if is_goal and row['priority']:
                     priority = row['priority'].value()
                 
-                # Check if this is a goal constraint
-                is_goal = False
-                if is_goal_program and row['is_goal']:
-                    is_goal = row['is_goal'].isChecked()
-                
-                # Create constraint with isGoal attribute
-                constraints.append(Constrain(coef, type_val, solution, priority, isGoal=is_goal))
+                constraints.append(Constrain(coef, type_val, solution, priority))
             
             # Get unrestricted variables
             unrestricted = [checkbox.isChecked() for checkbox in self.unrestricted_checkboxes]
@@ -369,7 +343,7 @@ class LPSolverGUI(QMainWindow):
                 constraints=constraints,
                 zRow=z_row,
                 maximize=maximize,
-                isGoal=is_goal_program,
+                isGoal=is_goal,
                 unrestricted=unrestricted,
                 symbol_map=symbol_map
             )
@@ -377,7 +351,7 @@ class LPSolverGUI(QMainWindow):
             # Determine which solver to use based on constraint types and goal programming
             solver = None
             
-            if is_goal_program:
+            if is_goal:
                 # Goal programming
                 solver = GoalProgramming(input_obj)
             elif needs_advanced_solver:
@@ -422,14 +396,14 @@ class LPSolverGUI(QMainWindow):
         
         if file_path:
             try:
-                with open(file_path, 'w', encoding='utf-8') as file:
+                with open(file_path, "w", encoding='utf-8') as file:
                     file.write(solution_text)
                 QMessageBox.information(self, "Success", "Solution saved successfully!")
             except Exception as e:
                 QMessageBox.critical(self, "Error", f"Could not save file: {str(e)}")
 
 
-# Main function to run the application
+#Main function to run the application
 def main():
     app = QApplication(sys.argv)
     window = LPSolverGUI()

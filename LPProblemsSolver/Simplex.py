@@ -64,7 +64,7 @@ class Simplex(Solver):
        
        
     
-def test():  
+# def test():  
 #    input = Input( #optimal easy simplex
 #     n=2,
 #     m=4,
@@ -125,12 +125,12 @@ def test():
 #     symbol_map={0: "x1", 1: "x2",2:"x3",3:"x4"}
 # )
 
-   x = Simplex(input)
-   x.SetLinearProblem()
+   # x = Simplex(input)
+   # x.SetLinearProblem()
 
-   x.solve()
+   # x.solve()
    
 
-test()         
+# test()         
          
 #alldone

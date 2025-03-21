@@ -107,7 +107,7 @@ class CoreSimplex:
             row = [self.format_sympy_expr(val) for val in row]
             table_data.append([basic_var] + row)
 
-        self.LP.steps += tabulate(table_data, headers=headers, tablefmt="grid")+'\n'+'\n'
+        LP.steps += tabulate(table_data, headers=headers, tablefmt="grid")+'\n'+'\n'
         print(tabulate(table_data, headers=headers, tablefmt="grid"))
         print("")
     def format_sympy_expr(self, expr):

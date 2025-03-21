@@ -48,7 +48,8 @@ class Solver(ABC):
 
         print("► Optimal Values:")
         self.LP.steps += "► Optimal Values:\n\n"
-        max_var_length = max(len(self.LP.variables[bv]) for bv in self.LP.basic_variables if self.LP.variables[bv].startswith("x")) if self.LP.basic_variables else 10
+        x_lengths = [len(self.LP.variables[bv]) for bv in self.LP.basic_variables if self.LP.variables[bv].startswith("x")]
+        max_var_length = max(x_lengths) if x_lengths else 10
         for i in self.LP.basic_variables:
             var=self.LP.variables[i]
             if var.startswith("x"):
@@ -82,33 +83,29 @@ class Solver(ABC):
 
        
         if self.input.isGoal:
-            print("\n► Constraints Analysis:")
-            self.LP.steps += "\n► Constraints Analysis:\n\n"
+            print("\n► Goal Analysis:")
+            self.LP.steps += "\n► Goal Analysis:\n\n"
             k = 0
             for i, constraint in enumerate(self.input.constraints, start=1):
-                coef_terms = []
-                for j, coef in enumerate(constraint.coef):
-                    if coef >= 0:
-                        coef_terms.append(f"{coef}*{self.input.symbol_map[j]}")
-                    else:
-                        coef_terms.append(f"- {abs(coef)}*{self.input.symbol_map[j]}")
+                if constraint.isGoal:
+                    coef_terms = []
+                    for j, coef in enumerate(constraint.coef):
+                        if coef >= 0:
+                            coef_terms.append(f"{coef}*{self.input.symbol_map[j]}")
+                        else:
+                            coef_terms.append(f"- {abs(coef)}*{self.input.symbol_map[j]}")
                 
                
-                constraint_str = " + ".join(coef_terms).replace("+ -", "- ")
-                full_constraint = f"{constraint_str} {constraint.type} {constraint.solution}"
-                if(constraint.type == "<="):
-                      status = "Satisfied"
-                      status_icon = "[✓]"
-                else:
-                     status = "Satisfied" if self.LP.satisfied[k] else "Not Satisfied"
-                     status_icon = "[✓]" if self.LP.satisfied[k] else "[✗]"  
-                     k+=1
-
-               
-                print(f"\nConstraint {i}: {full_constraint}")
-                self.LP.steps += f"\nConstraint {i}: {full_constraint}\n"
-                print(f"   {status_icon} {status}")
-                self.LP.steps += f"   {status_icon} {status}\n"
+                    constraint_str = " + ".join(coef_terms).replace("+ -", "- ")
+                    full_constraint = f"{constraint_str} {constraint.type} {constraint.solution}"
+                    status = "Satisfied" if self.LP.satisfied[k] else "Not Satisfied"
+                    status_icon = "[✓]" if self.LP.satisfied[k] else "[✗]"  
+                    k+=1
+                    print(f"\nGoal {i}: {full_constraint}")
+                    self.LP.steps += f"\nGoal {i}: {full_constraint}\n"
+                    print(f"   {status_icon} {status}")
+                    self.LP.steps += f"   {status_icon} {status}\n"
+                
              
 
         print("\n" + "=" * 40 + "\n")

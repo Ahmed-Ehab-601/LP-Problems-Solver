@@ -17,11 +17,11 @@ class GoalProgramming(Solver):
        self.LP.objective_count = 0
        noOfextraConstraints = 0
        for constraint in self.input.constraints:
-          if constraint.type == ">=":
+          if constraint.isGoal:
              noOfextraConstraints += 1
              self.LP.objective_count += 1
-          elif constraint.type == "=":
-             self.LP.objective_count += 1  
+          elif constraint.type == ">=":
+             noOfextraConstraints+= 1  
                   
        self.LP.table_rows = self.LP.m + self.LP.objective_count
        self.LP.table_cols =  self.LP.n+self.LP.m+self.unrestricted_count+noOfextraConstraints+1
@@ -44,7 +44,46 @@ class GoalProgramming(Solver):
        slack = self.LP.n+self.unrestricted_count #index next slack   
        for i in range(self.LP.m):
           cons = self.input.constraints[i]
-          if cons.type == "<=":
+          if cons.isGoal:
+            delta = 0   
+            for j in range(self.LP.n):
+               if self.input.unrestricted[j]:
+                  self.LP.tableau[i+self.LP.objective_count,j+delta] = cons.coef[j]
+                  self.LP.tableau[i+self.LP.objective_count,j+delta+1] = -cons.coef[j]
+                  delta+=1 
+               else:
+                  self.LP.tableau[i+self.LP.objective_count,j+delta] = cons.coef[j] 
+            
+            self.LP.tableau[i+self.LP.objective_count,slack] = -1
+            self.LP.variables[slack] = self.subscribts.spluslist[i]
+            slack+=1
+            self.LP.tableau[i+self.LP.objective_count,slack] = 1
+            self.LP.variables[slack] = self.subscribts.sminuslist[i]
+            key = self.subscribts.plist[i]
+            self.LP.known_variables[key] = cons.priority
+            self.LP.goal_map[cons.priority] = currentZ
+            self.LP.goal_values.append(cons.priority)
+            if cons.type == ">=":
+               self.LP.non_basic_variables.append(slack-1)
+               self.LP.basic_variables.append(slack)
+               self.LP.tableau[currentZ,slack] = key
+               self.LP.tableau[currentZ,slack] *= -1
+            elif cons.type == "=":
+               self.LP.non_basic_variables.append(slack-1)
+               self.LP.basic_variables.append(slack)
+               self.LP.tableau[currentZ,slack] = key
+               self.LP.tableau[currentZ,slack] *= -1
+               self.LP.tableau[currentZ,slack-1] = key
+               self.LP.tableau[currentZ,slack-1] *= -1
+            elif cons.type == "<=":
+               self.LP.non_basic_variables.append(slack)  
+               self.LP.basic_variables.append(slack-1)
+               self.LP.tableau[currentZ,slack-1] = key
+               self.LP.tableau[currentZ,slack-1] *= -1    
+            currentZ+=1
+            slack+=1
+            self.LP.tableau[i+self.LP.objective_count,self.LP.table_cols-1] = cons.solution
+          elif cons.type == "<=":
             delta = 0   
             for j in range(self.LP.n):
                if self.input.unrestricted[j]:
@@ -68,19 +107,12 @@ class GoalProgramming(Solver):
                else:
                   self.LP.tableau[i+self.LP.objective_count,j+delta] = cons.coef[j] 
             self.LP.tableau[i+self.LP.objective_count,slack] = -1
-            self.LP.variables[slack] = self.subscribts.spluslist[i]
+            self.LP.variables[slack] = self.subscribts.elist[i]
             self.LP.non_basic_variables.append(slack)
             slack+=1
             self.LP.tableau[i+self.LP.objective_count,slack] = 1
-            self.LP.variables[slack] = self.subscribts.sminuslist[i]
+            self.LP.variables[slack] = self.subscribts.alist[i]
             self.LP.basic_variables.append(slack)
-            key = self.subscribts.plist[i]
-            self.LP.tableau[currentZ,slack] = key
-            self.LP.tableau[currentZ,slack] *= -1
-            self.LP.known_variables[key] = cons.priority
-            self.LP.goal_map[cons.priority] = currentZ
-            self.LP.goal_values.append(cons.priority)
-            currentZ+=1
             slack+=1
             self.LP.tableau[i+self.LP.objective_count,self.LP.table_cols-1] = cons.solution
           elif cons.type == "=":    
@@ -94,19 +126,10 @@ class GoalProgramming(Solver):
                   self.LP.tableau[i+self.LP.objective_count,j+delta] = cons.coef[j] 
             
             self.LP.tableau[i+self.LP.objective_count,slack] = 1
-            self.LP.variables[slack] = self.subscribts.sminuslist[i]
+            self.LP.variables[slack] = self.subscribts.alist[i]
             self.LP.basic_variables.append(slack)
-            key = self.subscribts.plist[i]
-            self.LP.tableau[currentZ,slack] = key
-            self.LP.tableau[currentZ,slack] *= -1
-            self.LP.known_variables[key] = cons.priority
-            self.LP.goal_map[cons.priority] = currentZ
-            self.LP.goal_values.append(cons.priority)
-            currentZ+=1
             slack+=1
             self.LP.tableau[i+self.LP.objective_count,self.LP.table_cols-1] = cons.solution
-      
-          
     def solve(self):
        print("Initial Tableau\n")
        self.LP.steps += "Initial Tableau\n\n"
@@ -135,23 +158,38 @@ class GoalProgramming(Solver):
        slack = self.LP.n+self.unrestricted_count
        for i in range(self.LP.m):
           cons = self.input.constraints[i]
-          if cons.type == ">=":
-             slack+=1
-             self.coresimplex.gaussJordan(self.LP.tableau,i+self.LP.objective_count,slack)
-             slack+=1
-          elif cons.type == "=": 
-             self.coresimplex.gaussJordan(self.LP.tableau,i+self.LP.objective_count,slack)
-             slack+=1
-          else:
-             slack+=1     
+          if cons.isGoal:
+             if cons.type == "<=":
+               self.coresimplex.gaussJordan(self.LP.tableau,i+self.LP.objective_count,slack)
+               slack+=2
+             else:
+               slack+=1
+               self.coresimplex.gaussJordan(self.LP.tableau,i+self.LP.objective_count,slack)
+               slack+=1 
 def test():
+   
+    inputtest = Input( 
+        n=2, m=6,
+        constraints=[
+            Constrain([7, 3], "<=", 40, 100,True),
+            Constrain([10, 5], "=", 60, 80,True),
+            Constrain([5, 4], ">=", 35, 60,True),
+            Constrain([100, 60], "<=", 600, 1),
+            Constrain([200, 0], ">=", 1000, 50),
+            Constrain([100, 400], "=", 1200, 80)
+        ],
+        zRow=[100, 60], maximize=True, isGoal=True,
+        unrestricted=[False, False],
+        symbol_map={0: "x1", 1: "x2"}
+    )
     input1 = Input( #lecture
         n=2, m=4,
         constraints=[
-            Constrain([7, 3], ">=", 40, 100),
-            Constrain([10, 5], ">=", 60, 80),
-            Constrain([5, 4], ">=", 35, 60),
-            Constrain([100, 60], "<=", 600, 1)
+            Constrain([7, 3], ">=", 40, 100,True),
+            Constrain([10, 5], ">=", 60, 80,True),
+            Constrain([5, 4], ">=", 35, 60,True),
+            Constrain([100, 60], "<=", 600, 1),
+            
         ],
         zRow=[100, 60], maximize=True, isGoal=True,
         unrestricted=[False, False],
@@ -161,9 +199,9 @@ def test():
     input2 = Input( #sheet
         n=2, m=4,
         constraints=[
-            Constrain([200, 0], ">=", 1000, 60),
-            Constrain([100, 400], ">=", 1200, 100),
-            Constrain([0, 250], ">=", 800, 150),
+            Constrain([200, 0], ">=", 1000, 50,True),
+            Constrain([100, 400], ">=", 1200, 80,True),
+            Constrain([0, 250], ">=", 800, 100,True),
             Constrain([1500, 3000], "<=", 15000, 1)
         ],
         zRow=[100, 60], maximize=True, isGoal=True,
