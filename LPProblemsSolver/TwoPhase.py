@@ -30,6 +30,10 @@ class TwoPhase(Solver):
     def solve(self):
         if(self.needphase1):
             if self.phase1():
+               print("Phase one Solved with state : ", self.LP.state)
+               self.LP.steps += "Phase one Solved with state : "+ self.LP.state+"\n\n"
+               print("\n")
+               self.LP.steps += "\n"
                self.phase2()       
         else:
             print("No need to Phase one\n")
@@ -125,7 +129,7 @@ class TwoPhase(Solver):
         print("Initial Tableau with artificial variables\n" )
         self.LP.steps += "Initial Tableau with artificial variables\n\n"
         self.coresimplex.DecorateSteps(self.LP)
-        for i in range(self.LP.m):
+        for i in range(len(self.LP.basic_variables)):
             factor = self.LP.tableau[0, self.LP.basic_variables[i]]
             if factor != 0:
                 self.LP.tableau[0, :] -= factor * self.LP.tableau[i + 1, :]
@@ -133,7 +137,7 @@ class TwoPhase(Solver):
         self.LP.steps += "Update Z Row\n\n"
         self.LP.maximize = False
         self.coresimplex.solve()
-        if(self.LP.tableau[0, self.LP.table_cols - 1] == 0 and self.LP.state == "optimal"):
+        if(self.LP.tableau[0, self.LP.table_cols - 1] == 0 and (self.LP.state == "optimal" or self.LP.state == "Degeneracy")):
              return True
         else :
             self.LP.state = "infeasible"
@@ -174,6 +178,7 @@ class TwoPhase(Solver):
         
          for a in self.atrificalVariables:
              if(a in self.LP.basic_variables): 
+                self.LP.tableau.row_del(self.LP.basic_variables.index(a)+1)
                 self.LP.basic_variables.remove(a)
              if(a in self.LP.non_basic_variables): 
                 self.LP.non_basic_variables.remove(a)
@@ -186,25 +191,25 @@ class TwoPhase(Solver):
              self.LP.tableau.col_del(self.atrificalVariables[i])
              self.LP.table_cols-=1
          for index , var in (self.LP.variables).items():
-               handledVar[index-prevAritificalVariables[index]]=var
-               if index in self.LP.basic_variables:
-                  i= self.LP.basic_variables.index(index)
-                  self.LP.basic_variables[i]=index-prevAritificalVariables[index]
-               elif index in self.LP.non_basic_variables:
-                  i= self.LP.non_basic_variables.index(index)
-                  self.LP.non_basic_variables[i]=index-prevAritificalVariables[index]
+               if (index not in self.atrificalVariables):
+                   handledVar[index-prevAritificalVariables[index]]=var
+                   if index in self.LP.basic_variables:
+                        i= self.LP.basic_variables.index(index)
+                        self.LP.basic_variables[i]=index-prevAritificalVariables[index]
+                   elif index in self.LP.non_basic_variables:
+                        i= self.LP.non_basic_variables.index(index)
+                        self.LP.non_basic_variables[i]=index-prevAritificalVariables[index]
          self.LP.variables = handledVar
-       
-        #      for j in range(self.LP.m):
-        #          if(self.LP.basic_variables[j]==self.atrificalVariables[i]):
-        #              self.LP.tableau.row_del(j+1)
-        #              self.LP.table_rows-=1
-        #              self.LP.m-=1
-        #              self.LP.basic_variables.remove(self.atrificalVariables[i])
-         
+
+        #  for a in self.atrificalVariables:
+        #     if a in self.LP.basic_variables:
+        #         indx=self.LP.basic_variables.index(a)
+        #         self.LP.basic_variables.remove(a)
+        #         self.LP.tableau.row_del(indx+1)
+        #         self.LP.table_rows-=1
+  
          print("Removing Atrifical Variables ..........\n")
          self.LP.steps += "Removing Atrifical Variables\n\n"
-      
          self.coresimplex.DecorateSteps(self.LP)
          print("Update Z Row ..............\n")
          self.LP.steps += "Update Z Row\n\n"
@@ -360,5 +365,5 @@ class TwoPhase(Solver):
 # solver = TwoPhase(input_data)
 # solver.SetLinearProblem()
 # solver.solve()
-# solver.solve()
+
 
