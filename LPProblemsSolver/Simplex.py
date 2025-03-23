@@ -63,6 +63,7 @@ class Simplex(Solver):
        print("Solved with Simplex Method\n")
        
        
+       
     
 # def test():  
 #    input = Input( #optimal easy simplex
@@ -77,7 +78,7 @@ class Simplex(Solver):
 #     zRow=[5,4],maximize=True,isGoal=False,
 #     unrestricted=[False,False],
 #     symbol_map={0: "x1", 1: "x2"}
-#)
+# )
 #    input = Input( #degenerate
 #     n=2,
 #     m=2,
@@ -125,10 +126,10 @@ class Simplex(Solver):
 #     symbol_map={0: "x1", 1: "x2",2:"x3",3:"x4"}
 # )
 
-   # x = Simplex(input)
-   # x.SetLinearProblem()
+#    x = Simplex(input)
+#    x.SetLinearProblem()
 
-   # x.solve()
+#    x.solve()
    
 
 # test()         

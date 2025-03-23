@@ -20,7 +20,7 @@ class Solver(ABC):
         pass
 
     def printSolution(self):
-        if self.LP.state != "optimal" and self.LP.state != "Goal":
+        if self.LP.state != "optimal" and self.LP.state != "Goal" and self.LP.state != "Degeneracy":
             print(f"\n► Problem State: {self.LP.state.upper()}")
             self.LP.steps += f"\n► Problem State: {self.LP.state.upper()}\n\n"
             return
@@ -46,7 +46,7 @@ class Solver(ABC):
             print(f"► Optimal Solution: {value}\n")
             self.LP.steps += f"\n► Optimal Solution: {value}\n\n"
 
-        print("► Optimal Values:")
+        print("► Optimal Values:\n")
         self.LP.steps += "► Optimal Values:\n\n"
         x_lengths = [len(self.LP.variables[bv]) for bv in self.LP.basic_variables if self.LP.variables[bv].startswith("x")]
         max_var_length = max(x_lengths) if x_lengths else 10

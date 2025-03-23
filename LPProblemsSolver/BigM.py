@@ -121,9 +121,9 @@ class BigM(Solver):
       
       self.coresimplex.LP = self.LP
       self.coresimplex.solve()
-      if(self.LP.state == "optimal" ):
+      if(self.LP.state == "optimal" or self.LP.state == "Degeneracy"):
           for i in range(len(self.LP.basic_variables)):
-              if self.LP.variables[self.LP.basic_variables[i]].startswith("a"):
+              if self.LP.variables[self.LP.basic_variables[i]].startswith("a") and self.LP.tableau[i+1, self.LP.table_cols-1] !=0:
                   self.LP.state = "Infeasible"
                   break
       self.printSolution()
@@ -179,7 +179,7 @@ class BigM(Solver):
 #       unrestricted=[False,True],
 #       symbol_map={0: "x1", 1: "x2"}
 # )
-# input_data = Input( #unboundeded
+# input_data = Input( #unboundeded 
 #       n=2,
 #       m=2,
 #       constraints=[
@@ -214,6 +214,18 @@ class BigM(Solver):
 #       unrestricted=[False,False],
 #       symbol_map={0: "x1", 1: "x2"}
 # )
+# input_data = Input( #reference deg z=5 x2 = 2, x1 = 1
+#       n=2,
+#       m=3,
+#       constraints=[
+#          Constrain([1, 1], ">=", 3, 1),
+#          Constrain([2, 1], "<=", 4, 1),
+#          Constrain([1, 1], "=", 3, 1)
+#       ],
+#       zRow=[3,1],maximize=True,isGoal=False,
+#       unrestricted=[False,False],
+#       symbol_map={0: "x1", 1: "x2"}
+#  )
 # solver = BigM(input_data)
 # solver.SetLinearProblem()
 # solver.solve()

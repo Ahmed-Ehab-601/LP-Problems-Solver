@@ -344,6 +344,18 @@ class TwoPhase(Solver):
 #       unrestricted=[False,False],
 #       symbol_map={0: "x1", 1: "x2"}
 # )
+# input_data = Input( #reference z=5 x2 = 2, x1 = 1
+#       n=2,
+#       m=3,
+#       constraints=[
+#          Constrain([1, 1], ">=", 3, 1),
+#          Constrain([2, 1], "<=", 4, 1),
+#          Constrain([1, 1], "=", 3, 1)
+#       ],
+#       zRow=[3,1],maximize=True,isGoal=False,
+#       unrestricted=[False,False],
+#       symbol_map={0: "x1", 1: "x2"}
+#  )
 
 # solver = TwoPhase(input_data)
 # solver.SetLinearProblem()

@@ -90,8 +90,11 @@ class CoreSimplex:
  
     
     def DecorateSteps(self,LP:LinearProblem):
-        headers = ["Basic"] + [LP.variables[i] for i in LP.variables]  
-        headers.append("RHS")  
+        headers = ["Basic"]
+        for i in range(self.LP.tableau.cols-1):
+            headers.append(self.LP.variables[i]) 
+        headers.append("RHS") 
+        
         table_data = []
         for i in range(LP.objective_count):
             formatted_row = list(LP.tableau[i, :]) 
