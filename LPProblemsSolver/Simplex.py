@@ -49,7 +49,7 @@ class Simplex(Solver):
           self.LP.basic_variables.append(slack)
           slack+=1
           self.LP.tableau[i+self.LP.objective_count,self.LP.table_cols-1] = cons.solution
-          
+
         
 
        

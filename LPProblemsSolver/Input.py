@@ -11,6 +11,7 @@ class Input:
         self.unrestricted=unrestricted  #list of bool unrestricted is true
         self.symbol_map=symbol_map #symbol map {0:x2,1:x1...xn}
         self.file = None        #file name
+        self.problemInput=""
                 
 
    

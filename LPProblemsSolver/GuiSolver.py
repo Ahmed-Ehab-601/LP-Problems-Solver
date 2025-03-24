@@ -7,7 +7,6 @@ from PyQt5.QtWidgets import (QApplication, QMainWindow, QWidget, QVBoxLayout, QH
 from PyQt5.QtCore import Qt, QMargins
 from PyQt5.QtGui import QFont
 import numpy as np
-
 # Import your solver modules
 from Solver import Solver  
 from TwoPhase import TwoPhase  
@@ -325,7 +324,7 @@ class LPSolverGUI(QMainWindow):
             # Get constraints
             constraints = []
             needs_advanced_solver = False
-            
+
             for i, row in enumerate(self.constraint_rows):
                 # Get coefficients
                 coef = []
@@ -373,7 +372,53 @@ class LPSolverGUI(QMainWindow):
                 unrestricted=unrestricted,
                 symbol_map=symbol_map
             )
-            
+
+            problem_input_str="Objective Function : "
+            #  objective function
+            obj_terms = []
+            for j, coef in enumerate(z_row):
+                if coef >= 0:
+                    obj_terms.append(f"{coef}*{symbol_map[j]}")
+                else:
+                    obj_terms.append(f"- {abs(coef)}*{symbol_map[j]}")
+
+            problem_input_str += " + ".join(obj_terms).replace("+ -", "- ") + "\n\nConstraints:\n"
+
+            # Add constraints
+            for i, constraint in enumerate(constraints, start=1):
+                coef_terms = []
+                for j, coef in enumerate(constraint.coef):
+                    if coef >= 0:
+                        coef_terms.append(f"{coef}*{symbol_map[j]}")
+                    else:
+                        coef_terms.append(f"- {abs(coef)}*{symbol_map[j]}")
+
+                constraint_str = " + ".join(coef_terms).replace("+ -", "- ")
+                full_constraint = f"{constraint_str} {constraint.type} {constraint.solution}"
+
+                problem_input_str += f"{full_constraint}\n"
+
+
+            unrestricted_vars = []
+            for i in range(len(input_obj.unrestricted)):
+                if input_obj.unrestricted[i]:
+                    unrestricted_vars.append(f"x{i + 1}")
+
+            if unrestricted_vars:
+                problem_input_str += f"\nUnrestricted Variables: {', '.join(unrestricted_vars)}"
+            else:
+                problem_input_str += "\nAll variables are restricted."
+            goal_status = " Goal Programming " if input_obj.isGoal else ""
+
+            # Define whether it's a maximization or minimization problem
+            optimization_type = "Maximization" if input_obj.maximize else "Minimization"
+
+            # Start building the problem input string
+            problem_input_str += f"{goal_status}\nOptimization Type: {optimization_type}\n\n "
+
+            problem_input_str+="\n\n"
+            input_obj.problemInput = problem_input_str
+            print (problem_input_str)
             # Determine which solver to use based on constraint types and goal programming
             solver = None
             

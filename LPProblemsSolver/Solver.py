@@ -9,6 +9,7 @@ class Solver(ABC):
     def __init__(self, input: Input):
         self.input = input
         self.LP = LinearProblem()
+        self.LP.steps=input.problemInput
         self.coresimplex = CoreSimplex()
         self.subscribts = SubscriptSuperscriptLists()
 
