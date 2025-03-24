@@ -1,5 +1,5 @@
 from Solver import Solver
-import LinearProblem
+from LinearProblem import LinearProblem
 import CoreSimplex
 import sympy as sp
 from sympy import Matrix, pprint
@@ -8,6 +8,7 @@ from Input import Input
 
 class BigM(Solver):
    def SetLinearProblem(self):
+        self.LP = LinearProblem()
         self.LP.n = self.input.n
         self.LP.m = self.input.m
         self.LP.isGoal = self.input.isGoal

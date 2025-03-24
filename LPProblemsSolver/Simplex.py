@@ -5,6 +5,7 @@ from Input import Input
 from Constrain import Constrain
 class Simplex(Solver):
     def SetLinearProblem(self):
+       self.LP = LinearProblem()
        self.LP.n = self.input.n
        self.LP.m = self.input.m
        self.unrestricted_count = 0

@@ -111,10 +111,16 @@ class CoreSimplex:
             formatted_row = list(LP.tableau[i, :])
             formatted_row = [self.format_sympy_expr(
                 val) for val in formatted_row]
-            if (LP.isGoal == False):
-                z_row = ["Z" if not LP.phaseOne else "r"] + formatted_row
+            name = None
+            if LP.phaseOne and i == 0:
+                name = "r"
+            elif i == 0 and not LP.isGoal:
+                name = "Z"
+            elif LP.phaseOne:
+                name = self.subscribts.zlist[i-1]
             else:
-                z_row = ["r" if LP.phaseOne and i == 0 else self.subscribts.zlist[i]] + formatted_row
+                name = self.subscribts.zlist[i]        
+            z_row = [name] + formatted_row
             table_data.append(z_row)
 
         for i, row in enumerate(LP.tableau[LP.objective_count:, :].tolist()):

@@ -87,9 +87,7 @@ class Solver(ABC):
             print("\n► Goal Analysis:")
             self.LP.steps += "\n► Goal Analysis:\n\n"
             k = 0
-            j = 1
-            if (self.LP.needPhaseOne):
-                k += 1
+            r = 1
             for i, constraint in enumerate(self.input.constraints, start=1):
                 coef_terms = []
                 for j, coef in enumerate(constraint.coef):
@@ -101,28 +99,20 @@ class Solver(ABC):
 
                 constraint_str = " + ".join(coef_terms).replace("+ -", "- ")
                 full_constraint = f"{constraint_str} {constraint.type} {constraint.solution}"
-                if (self.LP.needPhaseOne and not constraint.isGoal):
-                    status = "Satisfied" if self.LP.satisfied[0] else "Not Satisfied"
-                    status_icon = "[✓]" if self.LP.satisfied[0] else "[✗]"
-                    print(f"\nconstraint{j}: {full_constraint}")
-                    self.LP.steps += f"\nConstrains {j}: {full_constraint}\n"
-                    print(f"   {status_icon} {status}")
-                    self.LP.steps += f"   {status_icon} {status}\n"
-                    j += 1
-                elif constraint.isGoal:
+                if constraint.isGoal:
                     status = "Satisfied" if self.LP.satisfied[k] else "Not Satisfied"
                     status_icon = "[✓]" if self.LP.satisfied[k] else "[✗]"
-                    print(f"\nGoal {i}: {full_constraint}")
-                    self.LP.steps += f"\nGoal {i}: {full_constraint}\n"
+                    print(f"\nGoal {k+1}: {full_constraint}")
+                    self.LP.steps += f"\nGoal {k+1}: {full_constraint}\n"
                     print(f"   {status_icon} {status}")
                     self.LP.steps += f"   {status_icon} {status}\n"
                     k = k+1
                 elif not constraint.isGoal:
                     status = "Satisfied"
                     status_icon = "[✓]"
-                    print(f"\nconstraint{j}: {full_constraint}")
-                    self.LP.steps += f"\nConstrains {j}: {full_constraint}\n"
+                    print(f"\nConstraint {r}: {full_constraint}")
+                    self.LP.steps += f"\nConstrains {r}: {full_constraint}\n"
                     print(f"   {status_icon} {status}")
                     self.LP.steps += f"   {status_icon} {status}\n"
-                    j += 1
+                    r = r+1
         print("\n" + "=" * 40 + "\n")

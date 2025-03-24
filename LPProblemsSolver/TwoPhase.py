@@ -14,6 +14,7 @@ class TwoPhase(Solver):
 
     def SetLinearProblem(self):
         self.LP = LinearProblem()
+        self.atrificalVariables = []
         self.LP.n = self.input.n
         self.LP.m = self.input.m
         self.LP.variables = self.input.symbol_map.copy()
@@ -360,7 +361,24 @@ class TwoPhase(Solver):
 #       unrestricted=[False,False],
 #       symbol_map={0: "x1", 1: "x2"}
 #  )
+input_data = Input( #reference z=5 x2 = 2, x1 = 1
+      n=2,
+      m=3,
+      constraints=[
+         Constrain([1, 1], ">=", 3, 1),
+         Constrain([2, 1], "<=", 4, 1),
+         Constrain([1, 1], "=", 3, 1)
+      ],
+      zRow=[3,1],maximize=True,isGoal=False,
+      unrestricted=[False,False],
+      symbol_map={0: "x1", 1: "x2"}
+ )
 
-# solver = TwoPhase(input_data)
+solver = TwoPhase(input_data)
+x =5 
+while x > 0:
+    solver.SetLinearProblem()
+    solver.solve()
+    x -= 1
 # solver.SetLinearProblem()
 # solver.solve()
