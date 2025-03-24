@@ -21,5 +21,6 @@ class LinearProblem:
         self.goal_values =[]
         self.satisfied=[]
         self.phase1=False
+        self.needBigM = False
         
             

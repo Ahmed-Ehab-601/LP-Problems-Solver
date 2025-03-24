@@ -270,8 +270,8 @@ class LPSolverGUI(QMainWindow):
                 # Priority
                 row_layout.addWidget(QLabel("Priority:"))
                 priority_input = QSpinBox()
-                priority_input.setRange(1, 9999)  # Allow any positive integer
-                priority_input.setValue(i + 1)
+                priority_input.setRange(1, n_constraints)  # Allow any positive integer
+                priority_input.setValue(n_constraints - i)
                 row_layout.addWidget(priority_input)
             
             # Add spacer to push everything to the left
