@@ -1,6 +1,12 @@
 from sympy import Matrix, pprint
 print("hello")
 varName = {0: "x1", 1: "x2"}
+# vars ={}
+# for key,value in varName.items():
+#     varName.pop(key)
+#     varName[key+1] = value
+
+print(varName)    
 print(varName[1])
 print(varName[0])
 table = Matrix([[1, 2], [3, 'c']])
