@@ -117,7 +117,7 @@ class BigM(Solver):
       for i in range(len(self.LP.basic_variables)):
             row = i + 1
             col = self.LP.basic_variables[i]
-            self.coresimplex.gaussJordan(table=self.LP.tableau, row=row, col=col)
+            self.LP.tableau = self.coresimplex.gaussJordan(table=self.LP.tableau, row=row, col=col)
 
       
       self.coresimplex.LP = self.LP

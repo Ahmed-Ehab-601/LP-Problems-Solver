@@ -10,7 +10,6 @@ class GoalProgramming(Solver):
 
     def SetLinearProblem(self):
         self.LP = LinearProblem()
-        self.LP.steps+= self.input.problemInput
         self.atrificalVariables = []
         if not self.input.isGoal:
             return
@@ -175,14 +174,6 @@ class GoalProgramming(Solver):
         print("Initial Tableau\n")
         self.LP.steps += "Initial Tableau\n\n"
         self.coresimplex.DecorateSteps(self.LP)
-        pprint(self.LP.variables)
-        pprint(self.LP.basic_variables)
-        pprint(self.LP.non_basic_variables)
-        pprint(self.LP.known_variables)
-        pprint(self.LP.goal_values)
-        pprint(self.LP.goal_map)
-        pprint(self.LP.needPhaseOne)
-        print(self.LP.objective_count)
         print("update Z rows\n")
         self.LP.steps += "update Z rows\n\n"
         self.updateZRows()
@@ -190,6 +181,7 @@ class GoalProgramming(Solver):
         if self.LP.state == "Infeasible":
            self.printSolution()
            return
+        
         self.LP.satisfied = self.LP.objective_count*[False]
         self.LP.goal_values.sort(reverse=True)
         for i in self.LP.goal_values:
@@ -197,6 +189,7 @@ class GoalProgramming(Solver):
             self.LP.objective_index = zIndex
             self.coresimplex.LP = self.LP
             print("Solve for Goal ", zIndex+1, "\n")
+            self.LP.steps += "Solve for Goal "+str(zIndex+1)+"\n\n"
             self.coresimplex.solve()
             print(self.LP.state)
             if ((self.LP.state == "optimal" or self.LP.state == "Degeneracy" )and self.LP.tableau[zIndex, self.LP.table_cols-1] == 0):
@@ -206,12 +199,9 @@ class GoalProgramming(Solver):
             else:
                   print("Can't Satisfy Goal", zIndex+1, "\n")
                   self.LP.steps += "Can't Satisfy Goal"+str(zIndex+1)+"\n\n"
-        
-        pprint(self.LP.satisfied)
+
+
         self.printSolution()
-        with open("Steps.txt", "w") as f:
-            f.write(self.LP.steps)
-        print("Solved with Goal Programming Method\n")
 
     def updateZRows(self):
         slack = self.LP.n+self.unrestricted_count
@@ -222,19 +212,16 @@ class GoalProgramming(Solver):
                     slack += 2
                 else:
                     slack += 1
-                    self.coresimplex.gaussJordan(
-                        self.LP.tableau, i+self.LP.objective_count, slack)
+                    self.LP.tableau = self.coresimplex.gaussJordan(self.LP.tableau, i+self.LP.objective_count, slack)
                     slack += 1
             elif cons.type == "<=":
                 slack += 1
             elif cons.type == ">=":
                 slack += 1
-                self.coresimplex.gaussJordan(
-                    self.LP.tableau, i+self.LP.objective_count, slack)
+                self.LP.tableau = self.coresimplex.gaussJordan(self.LP.tableau, i+self.LP.objective_count, slack)
                 slack += 1
             elif cons.type == "=":
-                self.coresimplex.gaussJordan(
-                    self.LP.tableau, i+self.LP.objective_count, slack)
+                self.LP.tableau = self.coresimplex.gaussJordan(self.LP.tableau, i+self.LP.objective_count, slack)
                 slack += 1
     def PhaseOne(self):
        if not self.LP.needPhaseOne:
@@ -243,6 +230,7 @@ class GoalProgramming(Solver):
        self.LP.objective_index = 0
        self.coresimplex.LP = self.LP
        print("Solve for Constraints in Phase One","\n")
+       self.LP.steps += "Solve for Constraints in Phase One"+"\n\n"
        self.coresimplex.solve()
        if ((self.LP.state == "optimal" or self.LP.state == "Degeneracy" )and self.LP.tableau[0, self.LP.table_cols-1] == 0):
             for i in range(len(self.LP.basic_variables)):
@@ -465,9 +453,9 @@ def test():
    #      goal = GoalProgramming(case)
    #      goal.SetLinearProblem()
    #      goal.solve()
-    goal = GoalProgramming(inputtest9)
-    goal.SetLinearProblem()
-    goal.solve()
+    # goal = GoalProgramming(inputtest2)
+    # goal.SetLinearProblem()
+    # goal.solve()
 
 
 

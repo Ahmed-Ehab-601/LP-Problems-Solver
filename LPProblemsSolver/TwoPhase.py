@@ -203,13 +203,6 @@ class TwoPhase(Solver):
                         prevAritificalVariables[index]
         self.LP.variables = handledVar
 
-        #  for a in self.atrificalVariables:
-        #     if a in self.LP.basic_variables:
-        #         indx=self.LP.basic_variables.index(a)
-        #         self.LP.basic_variables.remove(a)
-        #         self.LP.tableau.row_del(indx+1)
-        #         self.LP.table_rows-=1
-
         print("Removing Atrifical Variables ..........\n")
         self.LP.steps += "Removing Atrifical Variables\n\n"
         self.coresimplex.DecorateSteps(self.LP)
@@ -221,8 +214,7 @@ class TwoPhase(Solver):
             factor = self.LP.tableau[0, self.LP.basic_variables[i]]
 
             if factor != 0:
-                self.coresimplex.gaussJordan(
-                    self.LP.tableau, i+1, self.LP.basic_variables[i])
+                self.LP.tableau = self.coresimplex.gaussJordan(self.LP.tableau, i+1, self.LP.basic_variables[i])
 
         self.LP.maximize = self.input.maximize
         self.coresimplex.LP = self.LP
@@ -361,24 +353,19 @@ class TwoPhase(Solver):
 #       unrestricted=[False,False],
 #       symbol_map={0: "x1", 1: "x2"}
 #  )
-input_data = Input( #reference z=5 x2 = 2, x1 = 1
-      n=2,
-      m=3,
-      constraints=[
-         Constrain([1, 1], ">=", 3, 1),
-         Constrain([2, 1], "<=", 4, 1),
-         Constrain([1, 1], "=", 3, 1)
-      ],
-      zRow=[3,1],maximize=True,isGoal=False,
-      unrestricted=[False,False],
-      symbol_map={0: "x1", 1: "x2"}
- )
+# input_data = Input( #reference z=5 x2 = 2, x1 = 1
+#       n=2,
+#       m=3,
+#       constraints=[
+#          Constrain([1, 1], ">=", 3, 1),
+#          Constrain([2, 1], "<=", 4, 1),
+#          Constrain([1, 1], "=", 3, 1)
+#       ],
+#       zRow=[3,1],maximize=True,isGoal=False,
+#       unrestricted=[False,False],
+#       symbol_map={0: "x1", 1: "x2"}
+#  )
 
-solver = TwoPhase(input_data)
-x =5 
-while x > 0:
-    solver.SetLinearProblem()
-    solver.solve()
-    x -= 1
+# solver = TwoPhase(input_data)
 # solver.SetLinearProblem()
 # solver.solve()

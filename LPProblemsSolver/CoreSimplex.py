@@ -47,6 +47,8 @@ class CoreSimplex:
                 coff = table[i, col]
                 table[i, :] -= coff * table.row(row)
 
+        table = self.clean_matrix_symbolic(table)
+        return table
     def solve(self):
         if self.LP is None:
             return
@@ -58,21 +60,25 @@ class CoreSimplex:
             if (self.LP.isGoal and not self.ckeckForCanSatisify()):
                 self.LP.state = "Goal"
                 break
-            leaving = self.getLeaving(
-                self.LP.tableau, self.LP.objective_count-1, entering)
-            self.gaussJordan(self.LP.tableau, leaving, entering)
-            self.LP.tableau = self.clean_matrix_symbolic(self.LP.tableau)
+            leaving = self.getLeaving(self.LP.tableau, self.LP.objective_count-1, entering)
+            if leaving == -1:
+                print("Entering", self.LP.variables[entering])
+                print("")
+                self.LP.steps += "Entering "+str(self.LP.variables[entering])+"\n\n"
+                self.LP.state = "unbounded"
+                self.DecorateSteps(self.LP)
+                break
+            self.LP.tableau = self.gaussJordan(self.LP.tableau, leaving, entering)
             new_sol = self.LP.tableau[self.LP.objective_index,
                                       self.LP.table_cols-1]
             if new_sol == cuurent_sol:
-                cuurent_sol = new_sol
+                self.LP.state = "Degeneracy"
+                break
             else:
                 cuurent_sol = new_sol
             col_leaving = self.LP.basic_variables[leaving -
                                                   self.LP.objective_count]
-            if leaving == -1:
-                self.LP.state = "unbounded"
-                break
+
             # swap col_leaving(basic) with entering(non basic)
             print(self.LP.variables[col_leaving],
                   "Leaves <-> Enters", self.LP.variables[entering])
