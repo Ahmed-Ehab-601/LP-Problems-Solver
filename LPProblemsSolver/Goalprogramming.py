@@ -10,6 +10,7 @@ class GoalProgramming(Solver):
 
     def SetLinearProblem(self):
         self.LP = LinearProblem()
+        self.LP.steps+= self.input.problemInput
         self.atrificalVariables = []
         if not self.input.isGoal:
             return
@@ -197,6 +198,7 @@ class GoalProgramming(Solver):
             self.coresimplex.LP = self.LP
             print("Solve for Goal ", zIndex+1, "\n")
             self.coresimplex.solve()
+            print(self.LP.state)
             if ((self.LP.state == "optimal" or self.LP.state == "Degeneracy" )and self.LP.tableau[zIndex, self.LP.table_cols-1] == 0):
                   self.LP.satisfied[zIndex] = True
                   print("Satisfied Goal", zIndex+1, "\n")
@@ -347,12 +349,12 @@ def test():
     inputtest4 = Input(  # sat g1 and constrains  x1=5 x2= 5/3
         n=2, m=6,
         constraints=[
-            Constrain([7, 3], "<=", 40, priority=6, isGoal=True),
-            Constrain([10, 5], "=", 60, priority=5, isGoal=True),
-            Constrain([5, 4], ">=", 35, priority=4, isGoal=True),
-            Constrain([100, 60], "<=", 600, 1),
-            Constrain([200, 0], "=", 1000, 50),
-            Constrain([100, 400], "<=", 1200, 80)
+            Constrain([7.0, 3.0], "<=", 40.0, priority=6, isGoal=True),
+            Constrain([10.0, 5.0], "=", 60.0, priority=5, isGoal=True),
+            Constrain([5.0, 4.0], ">=", 35.0, priority=4, isGoal=True),
+            Constrain([100.0, 60.0], "<=", 600.0, 1),
+            Constrain([200.0, 0.0], "=", 1000.0, 50.0),
+            Constrain([100.0, 400.0], "<=", 1200.0, 80)
         ],
         zRow=[100, 60], maximize=True, isGoal=True,
         unrestricted=[False, False],
@@ -375,9 +377,9 @@ def test():
     inputtest6 = Input( # x=5, x2= 5/3 goal 1 sat
         n=2, m=6,
         constraints=[
-            Constrain([7, 3], "<=", 40, priority=3, isGoal=True),
+            Constrain([7, 3], "<=", 40, priority=2, isGoal=True),
             Constrain([10, 5], "=", 60, priority=5, isGoal=True),
-            Constrain([5, 4], ">=", 35, priority=2, isGoal=True),
+            Constrain([5, 4], ">=", 35, priority=3, isGoal=True),
             Constrain([100, 60], "<=", 600, 1),
             Constrain([200, 0], "<=", 1000, 50),
             Constrain([100, 400], "<=", 1200, 80)
@@ -416,7 +418,20 @@ def test():
         unrestricted=[False, False],
         symbol_map={0: "x1", 1: "x2"}
     )
- 
+    inputtest9 = Input(  # sat g1 and constrains  x1=5 x2= 5/3
+        n=2, m=6,
+        constraints=[
+            Constrain([7.0, 3.0], "<=", 40.0, priority=6, isGoal=True),
+            Constrain([10.0, 5.0], "=", 60.0, priority=5, isGoal=True),
+            Constrain([5.0, 4.0], ">=", 35.0, priority=4, isGoal=True),
+            Constrain([100.0, 60.0], "<=", 600.0, 1),
+            Constrain([200.0, 0.0], "<=", 1000.0, 50.0),
+            Constrain([100.0, 400.0], ">=", 1200.0, 80)
+        ],
+        zRow=[100, 60], maximize=True, isGoal=True,
+        unrestricted=[False, False],
+        symbol_map={0: "x1", 1: "x2"}
+    )
     input1 = Input(  # lecture
         n=2, m=4,
         constraints=[
@@ -450,9 +465,10 @@ def test():
    #      goal = GoalProgramming(case)
    #      goal.SetLinearProblem()
    #      goal.solve()
-    goal = GoalProgramming(inputtest8)
+    goal = GoalProgramming(inputtest9)
     goal.SetLinearProblem()
     goal.solve()
+
 
 
 test()

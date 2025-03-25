@@ -372,7 +372,7 @@ class LPSolverGUI(QMainWindow):
                 unrestricted=unrestricted,
                 symbol_map=symbol_map
             )
-
+           
             problem_input_str="Objective Function : "
             #  objective function
             obj_terms = []

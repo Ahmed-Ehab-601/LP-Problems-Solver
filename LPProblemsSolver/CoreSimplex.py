@@ -2,6 +2,7 @@ from SubscriptSuperscriptLists import SubscriptSuperscriptLists
 from LinearProblem import LinearProblem
 from tabulate import tabulate
 from sympy import Matrix
+import sympy
 
 
 class CoreSimplex:
@@ -60,11 +61,11 @@ class CoreSimplex:
             leaving = self.getLeaving(
                 self.LP.tableau, self.LP.objective_count-1, entering)
             self.gaussJordan(self.LP.tableau, leaving, entering)
+            self.LP.tableau = self.clean_matrix_symbolic(self.LP.tableau)
             new_sol = self.LP.tableau[self.LP.objective_index,
                                       self.LP.table_cols-1]
             if new_sol == cuurent_sol:
-                self.LP.state = "Degeneracy"
-                break
+                cuurent_sol = new_sol
             else:
                 cuurent_sol = new_sol
             col_leaving = self.LP.basic_variables[leaving -
@@ -148,6 +149,21 @@ class CoreSimplex:
         except (ValueError, TypeError):
             return expr_str
 
+    def clean_matrix_symbolic(self, matrix):
+        cleaned_matrix = matrix.copy()
+        
+        for i in range(matrix.rows):
+            for j in range(matrix.cols):
+                # Simplify each element symbolically
+                cleaned_matrix[i, j] = sympy.simplify(
+                    sympy.nsimplify(
+                        cleaned_matrix[i, j], 
+                        tolerance=1e-10, 
+                        rational=True
+                    )
+                )
+        
+        return cleaned_matrix
 # def main():
 #     #test get leaving
 #    core = CoreSimplex()
