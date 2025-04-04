@@ -72,8 +72,7 @@ class CoreSimplex:
             new_sol = self.LP.tableau[self.LP.objective_index,
                                       self.LP.table_cols-1]
             if new_sol == cuurent_sol:
-                self.LP.state = "Degeneracy"
-                break
+                cuurent_sol = new_sol
             else:
                 cuurent_sol = new_sol
             col_leaving = self.LP.basic_variables[leaving -
