@@ -3,7 +3,6 @@ from sympy import Matrix, pprint
 from Input import Input
 from Constrain import Constrain
 
-
 class GoalProgramming(Solver):
     atrificalVariables = []
 
