@@ -8,7 +8,7 @@ class SubscriptSuperscriptLists:
             15: "\u2081\u2085", 16: "\u2081\u2086", 17: "\u2081\u2087", 18: "\u2081\u2088",
             19: "\u2081\u2089", 20: "\u2082\u2080"
         }
-
+       
         # Unicode for superscript + and -
         superscript_plus = "\u207A"
         superscript_minus = "\u207B"
@@ -25,6 +25,23 @@ class SubscriptSuperscriptLists:
         self.zlist = [f"Z{subscript_numbers[i]}" for i in range(1, 21)]
         self.rlist = [f"r{subscript_numbers[i]}" for i in range(1, 21)]
         self.xlist = [f"x{subscript_numbers[i]}" for i in range(1, 21)]
+        self.subscript_map = {
+            '₀': '0',
+            '₁': '1',
+            '₂': '2',
+            '₃': '3',
+            '₄': '4',
+            '₅': '5',
+            '₆': '6',
+            '₇': '7',
+            '₈': '8',
+            '₉': '9'
+        }
+      
+        
+    def extract_subscript_number(self,s):
+           return int(''.join(self.subscript_map[c] for c in s if c in self.subscript_map))
+
         
         
   

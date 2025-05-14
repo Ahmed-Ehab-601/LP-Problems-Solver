@@ -9,6 +9,7 @@ class Solver(ABC):
     def __init__(self, input: Input):
         self.input = input
         self.LP = LinearProblem()
+   
         self.LP.steps=input.problemInput
         self.coresimplex = CoreSimplex()
         self.subscribts = SubscriptSuperscriptLists()
@@ -56,8 +57,7 @@ class Solver(ABC):
         for i in self.LP.basic_variables:
             var = self.LP.variables[i]
             if var.startswith("x"):
-                value = str(self.LP.tableau[self.LP.basic_variables.index(
-                    i)+self.LP.objective_count, self.LP.table_cols-1])
+                value = str(self.LP.tableau[self.LP.basic_variables.index(i)+self.LP.objective_count, self.LP.table_cols-1])
                 try:
                     value = float(value)
                     if value.is_integer():

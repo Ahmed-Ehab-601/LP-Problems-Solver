@@ -108,6 +108,7 @@ class BigM(Solver):
       print("Initial Tableau\n")
       self.LP.steps += "Initial Tableau\n\n"
       self.coresimplex.DecorateSteps(self.LP)
+     
       return self.LP.tableau
    
    def solve(self): 

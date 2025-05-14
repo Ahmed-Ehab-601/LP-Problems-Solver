@@ -141,7 +141,7 @@ class TwoPhase(Solver):
         self.LP.steps += "Update Z Row\n\n"
         self.LP.maximize = False
         self.coresimplex.solve()
-        if (self.LP.tableau[0, self.LP.table_cols - 1] == 0 and (self.LP.state == "optimal" or self.LP.state == "Degeneracy")):
+        if (self.LP.tableau[0, self.LP.table_cols - 1] + 0 == 0 and (self.LP.state == "optimal" or self.LP.state == "Degeneracy")):
             return True
         else:
             self.LP.state = "infeasible"

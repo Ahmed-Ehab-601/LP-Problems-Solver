@@ -1,18 +1,26 @@
 import numpy as np
 import random
+from sympy import Matrix, pprint
+from Input import Input
+from Constrain import Constrain
+from SubscriptSuperscriptLists import SubscriptSuperscriptLists
+from BigM import BigM
+from TwoPhase import TwoPhase
 class Game:
-    def __init__(self, round_num = 0, player1_name="player1", player2_name="player2", N=4, is_player1_hider=True):
+    def __init__(self, round_num = 0, player1_name="player1", player2_name="player2", N=2, is_player1_hider=True):
         self.round = round_num
         self.player1_name = player1_name
         self.player2_name = player2_name
         self.player1_score = 0
         self.player2_score = 0
+        self.num_of_places=N**2
         self.N = N
         self.is_player1_hider = is_player1_hider
-        self.player1_prop = []
-        self.player2_prop = []
-        self.game_matrix = np.zeros((N**2,N**2))
+        self.game_matrix = np.zeros((self.num_of_places,self.num_of_places))
         self.world = np.full((N,N),"",dtype=str)
+        self.player1_prop=[0]*self.num_of_places
+        self.player2_prop=[0]*self.num_of_places
+        self.subscribts = SubscriptSuperscriptLists()
     def reset():
         pass
     def randimazePlayer(self,player:int):
@@ -69,14 +77,92 @@ class Game:
         elif difficulty == 3 :
             return "H"
                                         
+        
+    def build_input_obj(self):
+        constraints = []
+        symbol_map = {}
+      
+        z_row = [0] * (self.num_of_places + 1)
+        unrestricted = [False] * (self.num_of_places + 1)
+
+        for i in range(self.num_of_places): 
+            col = self.game_matrix[:,i]
+            new_col = [-1 * x for x in col]
+            new_col.append(1)
+            print(new_col)
+            constraints.append(Constrain(new_col, "<=", 0, 1))
+            symbol_map[i] = f"x{i+1}"  
+           
+        last_constrain= [1] * self.num_of_places+ [0]
+       
+        constraints.append(Constrain(last_constrain, "=", 1, 1))
+   
+        z_row[self.num_of_places] = 1
+        symbol_map[self.num_of_places]=f"x{self.num_of_places+1}" # For V
+    
+        unrestricted[self.num_of_places] = True
+        
+        input_data = Input(
+            n=self.num_of_places+1,
+            m=self.num_of_places + 1,
+            constraints=constraints,
+            zRow=z_row,
+            maximize=True,
+            isGoal=False,
+            unrestricted=unrestricted,
+            symbol_map=symbol_map
+
+        )
+        
+        return input_data
+
     def calc_probability(self):
-        pass
+        solver = TwoPhase(self.build_input_obj())
+        solver.SetLinearProblem()
+    
+        solver.solve()
+        print(solver.LP.state)
+        while(solver.LP.state!="optimal"):
+            print(solver.LP.state)
+            self.build()
+            self.proximity()
+            solver.solve()
+            print("World",self.world)
+            print("game matrix",self.game_matrix)
+            print("player 1",self.player1_prop)
+            print("player 2",self.player2_prop)
+      
+        z= solver.LP.tableau[0,:]
+        z = z.subs(solver.LP.known_variables)
+        print(z)
+        start=self.num_of_places + 2
+        for i in range(start,start+self.num_of_places):
+            index=i-(start)
+            self.player2_prop[index]=z[i]
+        print(self.player2_prop)
+        
+        for i in solver.LP.basic_variables:
+           name=solver.LP.variables[i]
+           if name.startswith("x"):
+              prob=solver.LP.tableau[solver.LP.basic_variables.index(i)+1, solver.LP.table_cols-1]
+             
+              if(i<self.num_of_places):
+                  self.player1_prop[i]=prob
+          
+           print(self.player1_prop)
+           print(self.player2_prop)
+
     def start_game(self):
         #set N
         self.build()
         self.proximity()
         self.calc_probability()
-        pass
+        print("World",self.world)
+        print("game matrix",self.game_matrix)
+        print("player 1",self.player1_prop)
+        print("player 2",self.player2_prop)
+      
+
     def human_turn(self):     
         pass
 
@@ -89,4 +175,4 @@ class Game:
         print(self.game_matrix)
           
 game = Game()
-game.build_test()        
+game.start_game()        
