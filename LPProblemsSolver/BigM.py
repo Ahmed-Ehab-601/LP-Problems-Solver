@@ -13,7 +13,6 @@ class BigM(Solver):
         self.LP.isGoal = self.input.isGoal
         self.LP.basic_variables = [None] * self.LP.m 
         self.LP.maximize = self.input.maximize
-        
         self.LP.table_cols = self.LP.n + self.LP.m + 1 + self.input.unrestricted.count(True)
         self.LP.table_rows = self.LP.m + 1
         self.coresimplex = CoreSimplex.CoreSimplex(self.LP)

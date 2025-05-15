@@ -1,10 +1,8 @@
 from sympy import Matrix, pprint
-from Input import Input
-from Constrain import Constrain
 import random
-from SubscriptSuperscriptLists import SubscriptSuperscriptLists
-from BigM import BigM
-from TwoPhase import TwoPhase
+
+from scipy.optimize import linprog
+import numpy as np
 class Game:
     def __init__(self, round_num = 0, player1_name="player1", player2_name="player2", N=2, is_player1_hider=True):
         self.round = round_num
@@ -15,12 +13,13 @@ class Game:
         self.num_of_places=N**2
         self.N = N
         self.is_player1_hider = is_player1_hider
-        self.player1_prop = []
-        self.player2_prop = []
-        self.game_matrix =Matrix.zeros(N**2,N**2)
-        self.world=Matrix.zeros(N,N)
-    
-
+        self.game_matrix = np.zeros((self.num_of_places,self.num_of_places))
+        self.world = np.full((N,N),"",dtype=str)
+        self.player1_prop=[0]*self.num_of_places
+        self.player2_prop=[0]*self.num_of_places
+        self.game_value = 0
+    def reset():
+        pass
     def randimazePlayer(self, player: int):
         if player == 1:
             non_zero_indices = [i for i, x in enumerate(self.tmp_player1_prop) if x != 0]
@@ -50,7 +49,17 @@ class Game:
         return i, j
 
 
-          
+    def print_world(self):
+        pprint(self.world)
+        print("player 1 score: ")
+        print(self.player1_score)
+        print("vs player 2 score: ")
+        print(self.player2_score)
+        print("\n")
+        print("player 1 prop: ")
+        pprint(self.player1_prop)
+        print("player 2 prop: ")
+        pprint(self.player2_prop)      
     def simulation(self):
         self.is_player1_hider=random.choice([True, False])   
         for i in range(10):
@@ -68,20 +77,6 @@ class Game:
             self.player2_score -= self.game_matrix[row1, column1]
             
             self.print_world()
-
-
-    def print_world(self):
-        pprint(self.world)
-        print("player 1 score: ")
-        print(self.player1_score)
-        print("vs player 2 score: ")
-        print(self.player2_score)
-        print("\n")
-        print("player 1 prop: ")
-        pprint(self.player1_prop)
-        print("player 2 prop: ")
-        pprint(self.player2_prop)
-
     def proximity(self):
         for i in range(self.N**2):
             row = i//self.N
@@ -133,82 +128,104 @@ class Game:
             return "H"
                                         
         
-    def build_input_obj(self):
-        constraints = []
-        symbol_map = {}
-      
-        z_row = [0] * (self.num_of_places + 1)
-        unrestricted = [False] * (self.num_of_places + 1)
-
-        for i in range(self.num_of_places): 
-            col = self.game_matrix[:,i]
-            new_col = [-1 * x for x in col]
-            new_col.append(1)
-            print(new_col)
-            constraints.append(Constrain(new_col, "<=", 0, 1))
-            symbol_map[i] = f"x{i+1}"  
-           
-        last_constrain= [1] * self.num_of_places+ [0]
-       
-        constraints.append(Constrain(last_constrain, "=", 1, 1))
-   
-        z_row[self.num_of_places] = 1
-        symbol_map[self.num_of_places]=f"x{self.num_of_places+1}" # For V
-    
-        unrestricted[self.num_of_places] = True
+    def build_constraint(self,type:str):
+        # We'll replace this with code that builds matrices for scipy.optimize.linprog
+        # Instead of returning a custom Input object
         
-        input_data = Input(
-            n=self.num_of_places+1,
-            m=self.num_of_places + 1,
-            constraints=constraints,
-            zRow=z_row,
-            maximize=True,
-            isGoal=False,
-            unrestricted=unrestricted,
-            symbol_map=symbol_map
-
+        # For player 1's strategy, we want to maximize v subject to:
+        # -A^T x + v ≤ 0
+        # sum(x) = 1
+        # x ≥ 0
+        
+        # Set up the coefficient matrix for constraints
+        # Each column in game_matrix becomes a row constraint
+        A_ub = np.zeros((self.num_of_places, self.num_of_places + 1))
+        
+        # Fill A_ub with the negated transpose of game_matrix
+        for i in range(self.num_of_places):
+            if(type == "x"):
+                 A_ub[i, :self.num_of_places] = -1 * self.game_matrix[:, i]
+            else:
+                 A_ub[i, :self.num_of_places] = -1 * self.game_matrix[i, :]     
+           
+            A_ub[i, self.num_of_places] = 1  # Coefficient for v
+        
+        # RHS of inequality constraints
+        b_ub = np.zeros(self.num_of_places)
+        
+        # Equality constraint: sum of probabilities = 1
+        A_eq = np.zeros((1, self.num_of_places + 1))
+        A_eq[0, :self.num_of_places] = 1  # Sum of probabilities
+        A_eq[0, self.num_of_places] = 0   # v doesn't participate in this constraint
+        b_eq = np.array([1])  # Sum equals 1
+        
+        # Objective: maximize v (or minimize -v)
+        # All other variables have 0 coefficient in objective
+        c = np.zeros(self.num_of_places + 1)
+        c[self.num_of_places] = -1  # Negative because linprog minimizes
+        
+        # Bounds: x_i ≥ 0, v is unrestricted
+        bounds = [(0, None) for _ in range(self.num_of_places)] + [(None, None)]
+        
+        return {
+            'c': c,
+            'A_ub': A_ub,
+            'b_ub': b_ub,
+            'A_eq': A_eq,
+            'b_eq': b_eq,
+            'bounds': bounds
+        }
+            
+    def calc_probability(self):
+        # Get the LP parameters
+        x_input = self.build_constraint("x")   
+        x_result = linprog(
+            c=x_input['c'],
+            A_ub=x_input['A_ub'],
+            b_ub=x_input['b_ub'],
+            A_eq=x_input['A_eq'],
+            b_eq=x_input['b_eq'],
+            bounds=x_input['bounds'],
+            method='highs'  # Using HiGHS solver which is more modern and reliable
         )
         
-        return input_data
-
-    def calc_probability(self):
-        solver = TwoPhase(self.build_input_obj())
-        solver.SetLinearProblem()
-    
-        solver.solve()
-        print(solver.LP.state)
-        while(solver.LP.state!="optimal"):
-            print(solver.LP.state)
-            self.build()
-            self.proximity()
-            solver.solve()
-            print("World",self.world)
-            print("game matrix",self.game_matrix)
-            print("player 1",self.player1_prop)
-            print("player 2",self.player2_prop)
-      
-        z= solver.LP.tableau[0,:]
-        z = z.subs(solver.LP.known_variables)
-        print(z)
-        start=self.num_of_places + 2
-        for i in range(start,start+self.num_of_places):
-            index=i-(start)
-            self.player2_prop[index]=z[i]
-        print(self.player2_prop)
+        y_input = self.build_constraint("y")   
+        y_result = linprog(
+            c=x_input['c'],
+            A_ub=y_input['A_ub'],
+            b_ub=y_input['b_ub'],
+            A_eq=y_input['A_eq'],
+            b_eq=y_input['b_eq'],
+            bounds=y_input['bounds'],
+            method='highs'
+        )
         
-        for i in solver.LP.basic_variables:
-           name=solver.LP.variables[i]
-           if name.startswith("x"):
-              prob=solver.LP.tableau[solver.LP.basic_variables.index(i)+1, solver.LP.table_cols-1]
-             
-              if(i<self.num_of_places):
-                  self.player1_prop[i]=prob
-          
-           print(self.player1_prop)
-           print(self.player2_prop)
+        print(f"Optimization status: {x_result.message}")
+        print(f"Optimization status: {y_result.message}")
+        
+        # Extract solution
+        if x_result.success:
+            # Store the optimal mixed strategy for player 1
+            self.player1_prop = x_result.x[:self.num_of_places]
+            self.player2_prop = y_result.x[:self.num_of_places]
+            
+            # The optimal value of the game is the negative of the objective value 
+            # (since we minimized -v)
+            self.game_value = -x_result.fun
+        
+        else:
+            print("Failed to find optimal strategy")
 
     def start_game(self):
-        pass
+        self.build()
+        self.proximity()
+        self.calc_probability()
+        print("World",self.world)
+        print("game matrix",self.game_matrix)
+        print("player 1",self.player1_prop)
+        print("player 2",self.player2_prop)
+        print(f"Game value: {self.game_value}")
+
     def human_turn(self):     
         pass
 
