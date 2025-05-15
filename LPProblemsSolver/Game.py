@@ -1,8 +1,7 @@
-import numpy as np
-import random
 from sympy import Matrix, pprint
 from Input import Input
 from Constrain import Constrain
+import random
 from SubscriptSuperscriptLists import SubscriptSuperscriptLists
 from BigM import BigM
 from TwoPhase import TwoPhase
@@ -16,17 +15,73 @@ class Game:
         self.num_of_places=N**2
         self.N = N
         self.is_player1_hider = is_player1_hider
-        self.game_matrix = np.zeros((self.num_of_places,self.num_of_places))
-        self.world = np.full((N,N),"",dtype=str)
-        self.player1_prop=[0]*self.num_of_places
-        self.player2_prop=[0]*self.num_of_places
-        self.subscribts = SubscriptSuperscriptLists()
-    def reset():
-        pass
-    def randimazePlayer(self,player:int):
-        pass
-    def simulation():
-        pass
+        self.player1_prop = []
+        self.player2_prop = []
+        self.game_matrix =Matrix.zeros(N**2,N**2)
+        self.world=Matrix.zeros(N,N)
+    
+
+    def randimazePlayer(self, player: int):
+        if player == 1:
+            non_zero_indices = [i for i, x in enumerate(self.tmp_player1_prop) if x != 0]
+            if non_zero_indices:
+                random_index = random.choice(non_zero_indices)
+                self.tmp_player1_prop[random_index] -= self.smallest_element1
+            else:
+                self.tmp_player1_prop = self.player1_prop.copy()
+                non_zero_indices = [i for i, x in enumerate(self.tmp_player1_prop) if x != 0]
+                self.smallest_element1 = min(self.player1_prop[i] for i in non_zero_indices)
+                random_index = random.choice(non_zero_indices)
+                self.tmp_player1_prop[random_index] -= self.smallest_element1
+        else:
+            non_zero_indices = [i for i, x in enumerate(self.tmp_player2_prop) if x != 0]
+            if non_zero_indices:
+                random_index = random.choice(non_zero_indices)
+                self.tmp_player2_prop[random_index] -= self.smallest_element2
+            else:
+                self.tmp_player2_prop = self.player2_prop.copy()
+                non_zero_indices = [i for i, x in enumerate(self.tmp_player2_prop) if x != 0]
+                self.smallest_element2 = min(self.player2_prop[i] for i in non_zero_indices)
+                random_index = random.choice(non_zero_indices)
+                self.tmp_player2_prop[random_index] -= self.smallest_element2
+
+        i = random_index // self.N
+        j = random_index % self.N
+        return i, j
+
+
+          
+    def simulation(self):
+        self.is_player1_hider=random.choice([True, False])   
+        for i in range(10):
+            row,col = self.randimazePlayer(1)
+            if not self.is_player1_hider:
+                row1 = row * self.N + col
+            else :
+                column1 = row * self.N + col
+            row,col = self.randimazePlayer(2)
+            if not self.is_player1_hider:   
+                row1 = row * self.N + col
+            else :
+                column1 = row * self.N + col
+            self.player1_score += self.game_matrix[row1, column1]
+            self.player2_score -= self.game_matrix[row1, column1]
+            
+            self.print_world()
+
+
+    def print_world(self):
+        pprint(self.world)
+        print("player 1 score: ")
+        print(self.player1_score)
+        print("vs player 2 score: ")
+        print(self.player2_score)
+        print("\n")
+        print("player 1 prop: ")
+        pprint(self.player1_prop)
+        print("player 2 prop: ")
+        pprint(self.player2_prop)
+
     def proximity(self):
         for i in range(self.N**2):
             row = i//self.N
@@ -153,16 +208,7 @@ class Game:
            print(self.player2_prop)
 
     def start_game(self):
-        #set N
-        self.build()
-        self.proximity()
-        self.calc_probability()
-        print("World",self.world)
-        print("game matrix",self.game_matrix)
-        print("player 1",self.player1_prop)
-        print("player 2",self.player2_prop)
-      
-
+        pass
     def human_turn(self):     
         pass
 
