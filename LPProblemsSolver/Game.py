@@ -14,6 +14,8 @@ class Game:
         self.N = N
         self.is_player1_hider = is_player1_hider
         self.game_matrix = np.zeros((self.num_of_places,self.num_of_places))
+        self.hider_matrix = np.zeros((self.num_of_places,self.num_of_places))
+        
         
         self.world = np.full((N,N),"",dtype=str)
         self.player1_prop=[0]*self.num_of_places
@@ -86,11 +88,11 @@ class Game:
             else :
                 column1 = row * self.N + col
             if self.is_player1_hider: 
-                self.player1_score += self.game_matrix[row1, column1]
+                self.player1_score += self.hider_matrix[row1, column1]
                 self.player2_score -= self.game_matrix[row1, column1]   
             else:
                 self.player1_score -= self.game_matrix[row1, column1]
-                self.player2_score += self.game_matrix[row1, column1]
+                self.player2_score += self.hider_matrix[row1, column1]
             
             self.print_world()
     def proximity(self):
@@ -114,7 +116,7 @@ class Game:
     def penalty(self,place,row,col,factor):
         if col < 0 or col >= self.N or row < 0 or row >= self.N:
             return
-        self.game_matrix[place,row*self.N+col] *= factor
+        self.hider_matrix[place,row*self.N+col] *= factor
         
                 
     def build(self):
@@ -123,6 +125,8 @@ class Game:
                 difficulty = random.randint(1,3) # 1 = easy 2 = neutral  3 = hard
                 self.world[i,j] = self.set_difficulty(difficulty)
                 self.buildRow(i*self.N+j,difficulty)
+        
+        self.hider_matrix = self.game_matrix.copy()
                             
     def buildRow(self,row,difficulty):
         if difficulty == 1 : 
@@ -283,7 +287,7 @@ class Game:
         else:
             column1 = row * self.N + col
 
-        self.player1_score += self.game_matrix[row1, column1]
+        self.player1_score += self.hider_matrix[row1, column1]
         self.player2_score -= self.game_matrix[row1, column1]
         self.print_world()
     def build_test(self):
