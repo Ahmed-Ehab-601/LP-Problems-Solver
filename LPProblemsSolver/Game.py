@@ -4,7 +4,7 @@ import random
 from scipy.optimize import linprog
 import numpy as np
 class Game:
-    def __init__(self, round_num = 0, player1_name="player1", player2_name="player2", N=2, is_player1_hider=True):
+    def __init__(self, round_num = 0, player1_name="player1", player2_name="player2", N=4, is_player1_hider=True):
         self.round = round_num
         self.player1_name = player1_name
         self.player2_name = player2_name
@@ -14,35 +14,42 @@ class Game:
         self.N = N
         self.is_player1_hider = is_player1_hider
         self.game_matrix = np.zeros((self.num_of_places,self.num_of_places))
+        
         self.world = np.full((N,N),"",dtype=str)
         self.player1_prop=[0]*self.num_of_places
         self.player2_prop=[0]*self.num_of_places
-        self.tmp_player1_prop = []
-        self.tmp_player2_prop = []
+        self.tmp_player1_prop = [0]*self.num_of_places
+        self.tmp_player2_prop = [0]*self.num_of_places
         self.smallest_element1 = 0
         self.smallest_element2 = 0
         self.game_value = 0
     
     def randimazePlayer(self, player: int):
         if player == 1:
-            non_zero_indices = [i for i, x in enumerate(self.tmp_player1_prop) if x != 0]
+            non_zero_indices = [i for i, x in enumerate(self.tmp_player1_prop) if x >= self.smallest_element1]
             if non_zero_indices:
                 random_index = random.choice(non_zero_indices)
                 self.tmp_player1_prop[random_index] -= self.smallest_element1
+                self.tmp_player1_prop = [round(x, 6) for x in self.tmp_player1_prop]
             else:
-                self.tmp_player1_prop = self.player1_prop.copy()
-                non_zero_indices = [i for i, x in enumerate(self.tmp_player1_prop) if x != 0]
+                a = np.array(self.player1_prop)
+                b = np.array(self.tmp_player1_prop)
+                self.tmp_player1_prop = (a+b).tolist()
+                non_zero_indices = [i for i, x in enumerate(self.tmp_player1_prop) if x >= self.smallest_element1]
                 self.smallest_element1 = min(self.player1_prop[i] for i in non_zero_indices)
                 random_index = random.choice(non_zero_indices)
                 self.tmp_player1_prop[random_index] -= self.smallest_element1
         else:
-            non_zero_indices = [i for i, x in enumerate(self.tmp_player2_prop) if x != 0]
+            non_zero_indices = [i for i, x in enumerate(self.tmp_player2_prop) if x >= self.smallest_element2]
             if non_zero_indices:
                 random_index = random.choice(non_zero_indices)
                 self.tmp_player2_prop[random_index] -= self.smallest_element2
+                self.tmp_player2_prop = [round(x, 6) for x in self.tmp_player2_prop]
             else:
-                self.tmp_player2_prop = self.player2_prop.copy()
-                non_zero_indices = [i for i, x in enumerate(self.tmp_player2_prop) if x != 0]
+                a = np.array(self.player2_prop)
+                b = np.array(self.tmp_player2_prop)
+                self.tmp_player2_prop = (a+b).tolist()
+                non_zero_indices = [i for i, x in enumerate(self.tmp_player2_prop) if x >= self.smallest_element2]
                 self.smallest_element2 = min(self.player2_prop[i] for i in non_zero_indices)
                 random_index = random.choice(non_zero_indices)
                 self.tmp_player2_prop[random_index] -= self.smallest_element2
@@ -60,24 +67,30 @@ class Game:
         print(self.player2_score)
         print("\n")
         print("player 1 prop: ")
-        pprint(self.player1_prop)
+        pprint(self.tmp_player1_prop)
         print("player 2 prop: ")
-        pprint(self.player2_prop)      
+        pprint(self.tmp_player2_prop)      
     def simulation(self):
         self.is_player1_hider=random.choice([True, False])   
-        for i in range(10):
+        for i in range(100):
             row,col = self.randimazePlayer(1)
-            if not self.is_player1_hider:
+            print("player 1 turn",row,col)
+            if  self.is_player1_hider:
                 row1 = row * self.N + col
             else :
                 column1 = row * self.N + col
             row,col = self.randimazePlayer(2)
+            print("player 2 turn",row,col)
             if not self.is_player1_hider:   
                 row1 = row * self.N + col
             else :
                 column1 = row * self.N + col
-            self.player1_score += self.game_matrix[row1, column1]
-            self.player2_score -= self.game_matrix[row1, column1]
+            if self.is_player1_hider: 
+                self.player1_score += self.game_matrix[row1, column1]
+                self.player2_score -= self.game_matrix[row1, column1]   
+            else:
+                self.player1_score -= self.game_matrix[row1, column1]
+                self.player2_score += self.game_matrix[row1, column1]
             
             self.print_world()
     def proximity(self):
@@ -212,9 +225,20 @@ class Game:
             self.player1_prop = x_result.x[:self.num_of_places]
             self.player2_prop = y_result.x[:self.num_of_places]
             
+            non_zero_indices = [i for i, x in enumerate(self.player1_prop) if x != 0]
+            self.smallest_element1 = min(self.player1_prop[i] for i in non_zero_indices)
+            
+            non_zero_indices = [i for i, x in enumerate(self.player2_prop) if x != 0]
+            self.smallest_element2 = min(self.player2_prop[i] for i in non_zero_indices)
+            
             # The optimal value of the game is the negative of the objective value 
             # (since we minimized -v)
             self.game_value = -x_result.fun
+            
+            # 0.4 0.1 0.3 0.2
+            
+            #4
+            
         
         else:
             print("Failed to find optimal strategy")
@@ -235,15 +259,18 @@ class Game:
         else:
             column1 = i * self.N + j
 
-        non_zero_indices = [idx for idx, x in enumerate(self.tmp_player1_prop) if x != 0]
+        non_zero_indices = [idx for idx, x in enumerate(self.tmp_player1_prop) if x >= self.smallest_element1]
         if non_zero_indices:
             if self.is_player1_hider and row1 in non_zero_indices:
                 self.tmp_player1_prop[row1] -= self.smallest_element1
             elif not self.is_player1_hider and column1 in non_zero_indices:
                 self.tmp_player1_prop[column1] -= self.smallest_element1
+            self.tmp_player1_prop = [round(x, 6) for x in self.tmp_player1_prop]
         else:
-            self.tmp_player1_prop = self.player1_prop.copy()
-            non_zero_indices = [idx for idx, x in enumerate(self.tmp_player1_prop) if x != 0]
+            a = np.array(self.player1_prop)
+            b = np.array(self.tmp_player1_prop)
+            self.tmp_player1_prop = (a+b).tolist().copy()
+            non_zero_indices = [idx for idx, x in enumerate(self.tmp_player1_prop) if x >= self.smallest_element1]
             self.smallest_element1 = min(self.player1_prop[i] for i in non_zero_indices)
             if self.is_player1_hider and row1 in non_zero_indices:
                 self.tmp_player1_prop[row1] -= self.smallest_element1
@@ -258,6 +285,7 @@ class Game:
 
         self.player1_score += self.game_matrix[row1, column1]
         self.player2_score -= self.game_matrix[row1, column1]
+        self.print_world()
     def build_test(self):
         self.build()
         print(self.world)
@@ -267,4 +295,10 @@ class Game:
         print(self.game_matrix)
           
 game = Game()
-game.start_game()        
+game.start_game() 
+game.simulation()
+
+# game.human_turn(0,0)
+# game.human_turn(0,1)
+# game.human_turn(1,0)
+# game.human_turn(1,1)
