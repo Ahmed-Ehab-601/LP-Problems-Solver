@@ -20,8 +20,7 @@ class Game:
         self.N = N
         self.is_player1_hider = is_player1_hider
         self.game_matrix = np.zeros((self.num_of_places, self.num_of_places))
-        self.hider_matrix = np.zeros((self.num_of_places, self.num_of_places))
-        
+                
         self.world = np.full((N, N), "", dtype=str)
         self.player1_prop = [0]*self.num_of_places
         self.player2_prop = [0]*self.num_of_places
@@ -34,6 +33,7 @@ class Game:
         # For tracking the last moves
         self.last_human_move = None
         self.last_computer_move = None
+        self.last_round_winner = None
     
     def randimazePlayer(self, player: int):
         if player == 1:
@@ -83,11 +83,18 @@ class Game:
             self.penalty(i, row, col+2, 0.75)
             self.penalty(i, row-2, col, 0.75)
             self.penalty(i, row+2, col, 0.75)
+            
+            self.penalty(i, row+1, col+1, 0.75)
+            self.penalty(i, row+1, col-1, 0.75)
+            self.penalty(i, row-1, col+1, 0.75)
+            self.penalty(i, row-1, col-1, 0.75)
+            
+            
     
     def penalty(self, place, row, col, factor):
         if col < 0 or col >= self.N or row < 0 or row >= self.N:
             return
-        self.hider_matrix[place, row*self.N+col] *= factor
+        self.game_matrix[place, row*self.N+col] *= factor
         
     def build(self):
         for i in range(self.N):
@@ -95,8 +102,6 @@ class Game:
                 difficulty = random.randint(1, 3)  # 1 = easy 2 = neutral  3 = hard
                 self.world[i, j] = self.set_difficulty(difficulty)
                 self.buildRow(i*self.N+j, difficulty)
-        
-        self.hider_matrix = self.game_matrix.copy()
                             
     def buildRow(self, row, difficulty):
         if difficulty == 1:  # Easy
@@ -141,7 +146,11 @@ class Game:
         
         # Objective: maximize v (or minimize -v)
         c = np.zeros(self.num_of_places + 1)
-        c[self.num_of_places] = -1  # Negative because linprog minimizes
+        
+        if(type == "x"):
+            c[self.num_of_places] = -1  # Negative because linprog minimizes
+        else:
+            c[self.num_of_places] = 1  
         
         # Bounds: x_i ≥ 0, v is unrestricted
         bounds = [(0, None) for _ in range(self.num_of_places)] + [(None, None)]
@@ -230,7 +239,7 @@ class Game:
         
         # Calculate game outcome
         game_result = self.game_matrix[hider_index, seeker_index]
-        hider_score = self.hider_matrix[hider_index, seeker_index]
+        hider_score = self.game_matrix[hider_index, seeker_index]
         
         # Update scores based on who is hider/seeker
         if self.is_player1_hider:
@@ -263,7 +272,6 @@ class Game:
 
     def simulation(self, num_rounds=100):
         results = []
-        
         for i in range(num_rounds):
             # Player 1 move
             player1_row, player1_col = self.randimazePlayer(1)
@@ -283,7 +291,7 @@ class Game:
             
             # Calculate game outcome
             game_result = self.game_matrix[hider_index, seeker_index]
-            hider_score = self.hider_matrix[hider_index, seeker_index]
+            hider_score = self.game_matrix[hider_index, seeker_index]
             
             # Update scores based on who is hider/seeker
             if self.is_player1_hider:

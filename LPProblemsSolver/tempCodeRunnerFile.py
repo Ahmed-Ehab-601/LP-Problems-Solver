@@ -1,3 +1,4 @@
-a = np.array(self.player1_prop)
-                b = np.array(self.tmp_player1_prop)
-                self.tmp_player1_prop = (a+b).tolist()
+          # self.penalty(i, row+1, col+1, 0.75)
+            # self.penalty(i, row+1, col-1, 0.75)
+            # self.penalty(i, row-1, col+1, 0.75)
+            # self.penalty(i, row-1, col-1, 0.75)

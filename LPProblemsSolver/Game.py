@@ -10,12 +10,12 @@ class Game:
         self.player2_name = player2_name
         self.player1_score = 0
         self.player2_score = 0
+        self.player1_rounds_won = 0
+        self.player2_rounds_won = 0
         self.num_of_places=N**2
         self.N = N
         self.is_player1_hider = is_player1_hider
         self.game_matrix = np.zeros((self.num_of_places,self.num_of_places))
-        self.hider_matrix = np.zeros((self.num_of_places,self.num_of_places))
-        
         
         self.world = np.full((N,N),"",dtype=str)
         self.player1_prop=[0]*self.num_of_places
@@ -25,6 +25,10 @@ class Game:
         self.smallest_element1 = 0
         self.smallest_element2 = 0
         self.game_value = 0
+        
+        self.last_human_move = None
+        self.last_computer_move = None
+        self.last_round_winner = None
     
     def randimazePlayer(self, player: int):
         if player == 1:
@@ -88,11 +92,19 @@ class Game:
             else :
                 column1 = row * self.N + col
             if self.is_player1_hider: 
-                self.player1_score += self.hider_matrix[row1, column1]
+                if self.game_matrix[row1, column1] > 0:
+                    self.player1_rounds_won += 1
+                else:
+                    self.player2_rounds_won += 1
+                self.player1_score += self.game_matrix[row1, column1]
                 self.player2_score -= self.game_matrix[row1, column1]   
             else:
+                if self.game_matrix[row1, column1] > 0:
+                    self.player2_rounds_won += 1
+                else:
+                    self.player1_rounds_won += 1
                 self.player1_score -= self.game_matrix[row1, column1]
-                self.player2_score += self.hider_matrix[row1, column1]
+                self.player2_score += self.game_matrix[row1, column1]
             
             self.print_world()
     def proximity(self):
@@ -110,13 +122,18 @@ class Game:
             self.penalty(i,row-2,col,0.75)
             self.penalty(i,row+2,col,0.75)
             
+            self.penalty(i, row+1, col+1, 0.75)
+            self.penalty(i, row+1, col-1, 0.75)
+            self.penalty(i, row-1, col+1, 0.75)
+            self.penalty(i, row-1, col-1, 0.75)
+            
             
             
     
     def penalty(self,place,row,col,factor):
         if col < 0 or col >= self.N or row < 0 or row >= self.N:
             return
-        self.hider_matrix[place,row*self.N+col] *= factor
+        self.game_matrix[place,row*self.N+col] *= factor
         
                 
     def build(self):
@@ -126,7 +143,7 @@ class Game:
                 self.world[i,j] = self.set_difficulty(difficulty)
                 self.buildRow(i*self.N+j,difficulty)
         
-        self.hider_matrix = self.game_matrix.copy()
+        self.game_matrix = self.game_matrix.copy()
                             
     def buildRow(self,row,difficulty):
         if difficulty == 1 : 
@@ -182,7 +199,10 @@ class Game:
         # Objective: maximize v (or minimize -v)
         # All other variables have 0 coefficient in objective
         c = np.zeros(self.num_of_places + 1)
-        c[self.num_of_places] = -1  # Negative because linprog minimizes
+        if(type == "x"):
+            c[self.num_of_places] = -1  # Negative because linprog minimizes
+        else :
+            c[self.num_of_places] = 1
         
         # Bounds: x_i ≥ 0, v is unrestricted
         bounds = [(0, None) for _ in range(self.num_of_places)] + [(None, None)]
@@ -287,8 +307,20 @@ class Game:
         else:
             column1 = row * self.N + col
 
-        self.player1_score += self.hider_matrix[row1, column1]
-        self.player2_score -= self.game_matrix[row1, column1]
+        if self.is_player1_hider: 
+            if self.game_matrix[row1, column1] > 0:
+                self.player1_rounds_won += 1
+            else:
+                self.player2_rounds_won += 1
+            self.player1_score += self.game_matrix[row1, column1]
+            self.player2_score -= self.game_matrix[row1, column1]   
+        else:
+            if self.game_matrix[row1, column1] > 0:
+                self.player2_rounds_won += 1
+            else:
+                self.player1_rounds_won += 1
+            self.player1_score -= self.game_matrix[row1, column1]
+            self.player2_score += self.game_matrix[row1, column1]
         self.print_world()
     def build_test(self):
         self.build()
@@ -297,7 +329,8 @@ class Game:
         self.proximity()
         print(self.world)
         print(self.game_matrix)
-          
+    def winner(self):
+        return self.player1_rounds_won > self.player2_rounds_won      
 game = Game()
 game.start_game() 
 game.simulation()
