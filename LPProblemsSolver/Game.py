@@ -17,9 +17,12 @@ class Game:
         self.world = np.full((N,N),"",dtype=str)
         self.player1_prop=[0]*self.num_of_places
         self.player2_prop=[0]*self.num_of_places
+        self.tmp_player1_prop = []
+        self.tmp_player2_prop = []
+        self.smallest_element1 = 0
+        self.smallest_element2 = 0
         self.game_value = 0
-    def reset():
-        pass
+    
     def randimazePlayer(self, player: int):
         if player == 1:
             non_zero_indices = [i for i, x in enumerate(self.tmp_player1_prop) if x != 0]
@@ -226,9 +229,35 @@ class Game:
         print("player 2",self.player2_prop)
         print(f"Game value: {self.game_value}")
 
-    def human_turn(self):     
-        pass
+    def human_turn(self, i, j):
+        if self.is_player1_hider:
+            row1 = i * self.N + j
+        else:
+            column1 = i * self.N + j
 
+        non_zero_indices = [idx for idx, x in enumerate(self.tmp_player1_prop) if x != 0]
+        if non_zero_indices:
+            if self.is_player1_hider and row1 in non_zero_indices:
+                self.tmp_player1_prop[row1] -= self.smallest_element1
+            elif not self.is_player1_hider and column1 in non_zero_indices:
+                self.tmp_player1_prop[column1] -= self.smallest_element1
+        else:
+            self.tmp_player1_prop = self.player1_prop.copy()
+            non_zero_indices = [idx for idx, x in enumerate(self.tmp_player1_prop) if x != 0]
+            self.smallest_element1 = min(self.player1_prop[i] for i in non_zero_indices)
+            if self.is_player1_hider and row1 in non_zero_indices:
+                self.tmp_player1_prop[row1] -= self.smallest_element1
+            elif not self.is_player1_hider and column1 in non_zero_indices:
+                self.tmp_player1_prop[column1] -= self.smallest_element1
+
+        row, col = self.randimazePlayer(2)
+        if not self.is_player1_hider:
+            row1 = row * self.N + col
+        else:
+            column1 = row * self.N + col
+
+        self.player1_score += self.game_matrix[row1, column1]
+        self.player2_score -= self.game_matrix[row1, column1]
     def build_test(self):
         self.build()
         print(self.world)
