@@ -270,49 +270,65 @@ class Game:
         self.start_game()
 
     def simulation(self, num_rounds=100):
+        self.is_player1_hider=True
         results = []
         for i in range(num_rounds):
-        # Player 1 move
-            player1_row, player1_col = self.randimazePlayer(1)
-            player1_index = player1_row * self.N + player1_col
-# Player 2 move
-            print("player 1 played at ",player1_row,player1_col)
-            player2_row, player2_col = self.randimazePlayer(2)
-            player2_index = player2_row * self.N + player2_col
-            print("player 2 played at ",player2_row,player2_col)
-
-# Determine hider and seeker indices
-        
-            hider_index = player1_index
-            seeker_index = player2_index
-        
-        # Calculate game outcome
+            # Player 1 move
+            if self.is_player1_hider:
+                player1_row, player1_col = self.randimazePlayer(1)
+                player1_index = player1_row * self.N + player1_col
+                # Player 2 move
+                player2_row, player2_col = self.randimazePlayer(2)
+                player2_index = player2_row * self.N + player2_col
+                # Determine hider and seeker indices
+                hider_index = player1_index
+                seeker_index = player2_index
+            else :
+                player1_row, player1_col = self.randimazePlayer(2)
+                player1_index = player1_row * self.N + player1_col
+                # Player 2 move
+                player2_row, player2_col = self.randimazePlayer(1)
+                player2_index = player2_row * self.N + player2_col    
+            
+                hider_index = player2_index
+                seeker_index = player1_index
+            # Calculate game outcome
             game_result = self.game_matrix[hider_index, seeker_index]
             # Determine round winner
             round_winner = None
             # Update scores based on who is hider/seeker
-            
-            if game_result > 0:  # Hider wins
-                            self.player1_rounds_won += 1
-                            round_winner = "player1"
-            else:  # Seeker wins
-                            self.player2_rounds_won += 1
-                            round_winner = "player2"
-            self.player1_score += game_result
-            self.player2_score -= game_result
-            
+            if self.is_player1_hider:
+                            if game_result > 0:  # Hider wins
+                                self.player1_rounds_won += 1
+                                round_winner = "player1"
+                            else:  # Seeker wins
+                                self.player2_rounds_won += 1
+                                round_winner = "player2"
+                            self.player1_score += game_result
+                            self.player2_score -= game_result
+            else:
+                            if game_result > 0:  # Hider wins
+                                self.player2_rounds_won += 1
+                                round_winner = "player2"
+                            else:  # Seeker wins
+                                self.player1_rounds_won += 1
+                                round_winner = "player1"
+                            self.player2_score += game_result
+                            self.player1_score -= game_result
+                        
+                
             self.round += 1
             # Store round result for visualization
             results.append({
-                        'round': i + 1,
-        'player1_move': (player1_row, player1_col),
-                        'player2_move': (player2_row, player2_col),
-        'player1_score': self.player1_score,
-        'player2_score': self.player2_score,
-        'player1_rounds_won': self.player1_rounds_won,
-        'player2_rounds_won': self.player2_rounds_won,
-        'round_winner': round_winner
-                    })
+                            'round': i + 1,
+            'player1_move': (player1_row, player1_col),
+                            'player2_move': (player2_row, player2_col),
+            'player1_score': self.player1_score,
+            'player2_score': self.player2_score,
+            'player1_rounds_won': self.player1_rounds_won,
+            'player2_rounds_won': self.player2_rounds_won,
+            'round_winner': round_winner
+                        })
             
        
         return results

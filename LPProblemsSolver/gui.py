@@ -6,7 +6,6 @@ from scipy.optimize import linprog
 import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.colors as mcolors
-
 from Game import Game
 
 class HideAndSeekGUI:
