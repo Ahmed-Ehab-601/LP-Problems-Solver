@@ -22,12 +22,12 @@ class Game:
         self.game_matrix = np.zeros((self.num_of_places, self.num_of_places))
                 
         self.world = np.full((N, N), "", dtype=str)
-        self.player1_prop = [0]*self.num_of_places
-        self.player2_prop = [0]*self.num_of_places
-        self.tmp_player1_prop = [0]*self.num_of_places
-        self.tmp_player2_prop = [0]*self.num_of_places
-        self.smallest_element1 = 0
-        self.smallest_element2 = 0
+        self.x_prop = [0]*self.num_of_places
+        self.y_prop = [0]*self.num_of_places
+        self.tmp_x_prop = [0]*self.num_of_places
+        self.tmp_y_prop = [0]*self.num_of_places
+        self.smallest_elementx = 0
+        self.smallest_elementy = 0
         self.game_value = 0
         
         # For tracking the last moves
@@ -37,33 +37,33 @@ class Game:
     
     def randimazePlayer(self, player: int):
         if player == 1:
-            non_zero_indices = [i for i, x in enumerate(self.tmp_player1_prop) if x >= self.smallest_element1]
+            non_zero_indices = [i for i, x in enumerate(self.tmp_x_prop) if x >= self.smallest_elementx]
             if non_zero_indices:
                 random_index = random.choice(non_zero_indices)
-                self.tmp_player1_prop[random_index] -= self.smallest_element1
-                self.tmp_player1_prop = [round(x, 6) for x in self.tmp_player1_prop]
+                self.tmp_x_prop[random_index] -= self.smallest_elementx
+                self.tmp_x_prop = [round(x, 6) for x in self.tmp_x_prop]
             else:
-                a = np.array(self.player1_prop)
-                b = np.array(self.tmp_player1_prop)
-                self.tmp_player1_prop = (a+b).tolist()
-                non_zero_indices = [i for i, x in enumerate(self.tmp_player1_prop) if x >= self.smallest_element1]
-                self.smallest_element1 = min(self.player1_prop[i] for i in non_zero_indices)
+                a = np.array(self.x_prop)
+                b = np.array(self.tmp_x_prop)
+                self.tmp_x_prop = (a+b).tolist()
+                non_zero_indices = [i for i, x in enumerate(self.tmp_x_prop) if x >= self.smallest_elementx]
+                self.smallest_elementx = min(self.x_prop[i] for i in non_zero_indices)
                 random_index = random.choice(non_zero_indices)
-                self.tmp_player1_prop[random_index] -= self.smallest_element1
+                self.tmp_x_prop[random_index] -= self.smallest_elementx
         else:
-            non_zero_indices = [i for i, x in enumerate(self.tmp_player2_prop) if x >= self.smallest_element2]
+            non_zero_indices = [i for i, x in enumerate(self.tmp_y_prop) if x >= self.smallest_elementy]
             if non_zero_indices:
                 random_index = random.choice(non_zero_indices)
-                self.tmp_player2_prop[random_index] -= self.smallest_element2
-                self.tmp_player2_prop = [round(x, 6) for x in self.tmp_player2_prop]
+                self.tmp_y_prop[random_index] -= self.smallest_elementy
+                self.tmp_y_prop = [round(x, 6) for x in self.tmp_y_prop]
             else:
-                a = np.array(self.player2_prop)
-                b = np.array(self.tmp_player2_prop)
-                self.tmp_player2_prop = (a+b).tolist()
-                non_zero_indices = [i for i, x in enumerate(self.tmp_player2_prop) if x >= self.smallest_element2]
-                self.smallest_element2 = min(self.player2_prop[i] for i in non_zero_indices)
+                a = np.array(self.y_prop)
+                b = np.array(self.tmp_y_prop)
+                self.tmp_y_prop = (a+b).tolist()
+                non_zero_indices = [i for i, x in enumerate(self.tmp_y_prop) if x >= self.smallest_elementy]
+                self.smallest_elementy = min(self.y_prop[i] for i in non_zero_indices)
                 random_index = random.choice(non_zero_indices)
-                self.tmp_player2_prop[random_index] -= self.smallest_element2
+                self.tmp_y_prop[random_index] -= self.smallest_elementy
 
         i = random_index // self.N
         j = random_index % self.N
@@ -191,20 +191,20 @@ class Game:
         # Extract solution
         if x_result.success and y_result.success:
             # Store the optimal mixed strategy for players
-            self.player1_prop = x_result.x[:self.num_of_places]
-            self.player2_prop = y_result.x[:self.num_of_places]
+            self.x_prop = x_result.x[:self.num_of_places]
+            self.y_prop = y_result.x[:self.num_of_places]
             
-            non_zero_indices = [i for i, x in enumerate(self.player1_prop) if x != 0]
-            self.smallest_element1 = min(self.player1_prop[i] for i in non_zero_indices) if non_zero_indices else 0
+            non_zero_indices = [i for i, x in enumerate(self.x_prop) if x != 0]
+            self.smallest_elementx = min(self.x_prop[i] for i in non_zero_indices) if non_zero_indices else 0
             
-            non_zero_indices = [i for i, x in enumerate(self.player2_prop) if x != 0]
-            self.smallest_element2 = min(self.player2_prop[i] for i in non_zero_indices) if non_zero_indices else 0
+            non_zero_indices = [i for i, x in enumerate(self.y_prop) if x != 0]
+            self.smallest_elementy = min(self.y_prop[i] for i in non_zero_indices) if non_zero_indices else 0
             
             # The optimal value of the game is the negative of the objective value
             self.game_value = -x_result.fun
             
-            self.tmp_player1_prop = self.player1_prop.copy()
-            self.tmp_player2_prop = self.player2_prop.copy()
+            self.tmp_x_prop = self.x_prop.copy()
+            self.tmp_y_prop = self.y_prop.copy()
             
             return True
         else:
@@ -217,49 +217,48 @@ class Game:
         return self.calc_probability()
 
     def human_turn(self, i, j):
-        # Record human move
+      # Record human move
         self.last_human_move = (i, j)
-        
-        # Convert 2D coordinates to 1D index
+      # Convert 2D coordinates to 1D index
         human_index = i * self.N + j
-        
-        # Determine if human is hider or seeker and set appropriate indices
+      # Determine if human is hider or seeker and set appropriate indices
         if self.is_player1_hider:
             hider_index = human_index
-            # Get computer's move (seeker)
+      # Get computer's move (seeker)
             seeker_row, seeker_col = self.randimazePlayer(2)
             self.last_computer_move = (seeker_row, seeker_col)
             seeker_index = seeker_row * self.N + seeker_col
         else:
             seeker_index = human_index
-            # Get computer's move (hider)
-            hider_row, hider_col = self.randimazePlayer(2)
+      # Get computer's move (hider)
+            hider_row, hider_col = self.randimazePlayer(1)
             self.last_computer_move = (hider_row, hider_col)
             hider_index = hider_row * self.N + hider_col
-        
-        # Calculate game outcome
+      # Calculate game outcome
         game_result = self.game_matrix[hider_index, seeker_index]
-        hider_score = self.game_matrix[hider_index, seeker_index]
-        
-        # Update scores based on who is hider/seeker
+      # Update scores based on who is hider/seeker
         if self.is_player1_hider:
             if game_result > 0:  # Hider wins
                 self.player1_rounds_won += 1
-            else:  # Seeker wins
+                self.last_round_winner = "player1"
+            else:  
+      # Seeker wins
                 self.player2_rounds_won += 1
-            self.player1_score += hider_score
+                self.last_round_winner = "player2"
+            self.player1_score += game_result
             self.player2_score -= game_result
         else:
             if game_result > 0:  # Hider wins
                 self.player2_rounds_won += 1
-            else:  # Seeker wins
+                self.last_round_winner = "player2"
+            else:  
+      # Seeker wins
                 self.player1_rounds_won += 1
-            self.player2_score += hider_score
+                self.last_round_winner = "player1"
+            self.player2_score += game_result
             self.player1_score -= game_result
-        
         self.round += 1
         return self.last_computer_move
-
     def reset(self):
         self.player1_score = 0
         self.player2_score = 0
@@ -273,55 +272,48 @@ class Game:
     def simulation(self, num_rounds=100):
         results = []
         for i in range(num_rounds):
-            # Player 1 move
+        # Player 1 move
             player1_row, player1_col = self.randimazePlayer(1)
             player1_index = player1_row * self.N + player1_col
-            
-            # Player 2 move
+# Player 2 move
+            print("player 1 played at ",player1_row,player1_col)
             player2_row, player2_col = self.randimazePlayer(2)
             player2_index = player2_row * self.N + player2_col
-            
-            # Determine hider and seeker indices
-            if self.is_player1_hider:
-                hider_index = player1_index
-                seeker_index = player2_index
-            else:
-                hider_index = player2_index
-                seeker_index = player1_index
-            
-            # Calculate game outcome
+            print("player 2 played at ",player2_row,player2_col)
+
+# Determine hider and seeker indices
+        
+            hider_index = player1_index
+            seeker_index = player2_index
+        
+        # Calculate game outcome
             game_result = self.game_matrix[hider_index, seeker_index]
-            hider_score = self.game_matrix[hider_index, seeker_index]
-            
+            # Determine round winner
+            round_winner = None
             # Update scores based on who is hider/seeker
-            if self.is_player1_hider:
-                if game_result > 0:  # Hider wins
-                    self.player1_rounds_won += 1
-                else:  # Seeker wins
-                    self.player2_rounds_won += 1
-                self.player1_score += hider_score
-                self.player2_score -= game_result
-            else:
-                if game_result > 0:  # Hider wins
-                    self.player2_rounds_won += 1
-                else:  # Seeker wins
-                    self.player1_rounds_won += 1
-                self.player2_score += hider_score
-                self.player1_score -= game_result
+            
+            if game_result > 0:  # Hider wins
+                            self.player1_rounds_won += 1
+                            round_winner = "player1"
+            else:  # Seeker wins
+                            self.player2_rounds_won += 1
+                            round_winner = "player2"
+            self.player1_score += game_result
+            self.player2_score -= game_result
             
             self.round += 1
             
-            # Store round result for visualization
-            results.append({
-                'round': i + 1,
-                'player1_move': (player1_row, player1_col),
-                'player2_move': (player2_row, player2_col),
-                'player1_score': self.player1_score,
-                'player2_score': self.player2_score,
-                'player1_rounds_won': self.player1_rounds_won,
-                'player2_rounds_won': self.player2_rounds_won
-            })
-        
+       # Store round result for visualization
+        results.append({
+                        'round': i + 1,
+        'player1_move': (player1_row, player1_col),
+                        'player2_move': (player2_row, player2_col),
+        'player1_score': self.player1_score,
+        'player2_score': self.player2_score,
+        'player1_rounds_won': self.player1_rounds_won,
+        'player2_rounds_won': self.player2_rounds_won,
+        'round_winner': round_winner
+                    })
         return results
 
 
@@ -757,11 +749,11 @@ class HideAndSeekGUI:
         fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
         
         # Prepare data for hider's probabilities
-        hider_probs = self.game.player1_prop if self.game.is_player1_hider else self.game.player2_prop
+        hider_probs = self.game.x_prop if self.game.is_player1_hider else self.game.y_prop
         hider_labels = [f"({i//self.game.N},{i%self.game.N})" for i in range(self.game.num_of_places)]
         
         # Prepare data for seeker's probabilities
-        seeker_probs = self.game.player2_prop if self.game.is_player1_hider else self.game.player1_prop
+        seeker_probs = self.game.y_prop if self.game.is_player1_hider else self.game.x_prop
         seeker_labels = [f"({i//self.game.N},{i%self.game.N})" for i in range(self.game.num_of_places)]
         
         # Plot hider's probabilities

@@ -4,7 +4,7 @@ import random
 from scipy.optimize import linprog
 import numpy as np
 class Game:
-    def __init__(self, round_num = 0, player1_name="player1", player2_name="player2", N=4, is_player1_hider=True):
+    def __init__(self, round_num = 0, player1_name="player1", player2_name="player2", N=2, is_player1_hider=True):
         self.round = round_num
         self.player1_name = player1_name
         self.player2_name = player2_name
@@ -76,37 +76,51 @@ class Game:
         pprint(self.tmp_player1_prop)
         print("player 2 prop: ")
         pprint(self.tmp_player2_prop)      
-    def simulation(self):
-        self.is_player1_hider=random.choice([True, False])   
-        for i in range(100):
-            row,col = self.randimazePlayer(1)
-            print("player 1 turn",row,col)
-            if  self.is_player1_hider:
-                row1 = row * self.N + col
-            else :
-                column1 = row * self.N + col
-            row,col = self.randimazePlayer(2)
-            print("player 2 turn",row,col)
-            if not self.is_player1_hider:   
-                row1 = row * self.N + col
-            else :
-                column1 = row * self.N + col
-            if self.is_player1_hider: 
-                if self.game_matrix[row1, column1] > 0:
-                    self.player1_rounds_won += 1
-                else:
-                    self.player2_rounds_won += 1
-                self.player1_score += self.game_matrix[row1, column1]
-                self.player2_score -= self.game_matrix[row1, column1]   
-            else:
-                if self.game_matrix[row1, column1] > 0:
-                    self.player2_rounds_won += 1
-                else:
-                    self.player1_rounds_won += 1
-                self.player1_score -= self.game_matrix[row1, column1]
-                self.player2_score += self.game_matrix[row1, column1]
-            
-            self.print_world()
+    def human_turn(self, i, j):
+      # Record human move
+        self.last_human_move = (i, j)
+      # Convert 2D coordinates to 1D index
+        human_index = i * self.N + j
+      # Determine if human is hider or seeker and set appropriate indices
+        if self.is_player1_hider:
+            hider_index = human_index
+      # Get computer's move (seeker)
+            seeker_row, seeker_col = self.randimazePlayer(2)
+            self.last_computer_move = (seeker_row, seeker_col)
+            seeker_index = seeker_row * self.N + seeker_col
+        else:
+            seeker_index = human_index
+      # Get computer's move (hider)
+            hider_row, hider_col = self.randimazePlayer(1)
+            self.last_computer_move = (hider_row, hider_col)
+            hider_index = hider_row * self.N + hider_col
+      # Calculate game outcome
+        game_result = self.game_matrix[hider_index, seeker_index]
+        hider_score = self.hider_matrix[hider_index, seeker_index]
+      # Update scores based on who is hider/seeker
+        if self.is_player1_hider:
+            if game_result > 0:  # Hider wins
+                self.player1_rounds_won += 1
+                self.last_round_winner = "player1"
+            else:  
+      # Seeker wins
+                self.player2_rounds_won += 1
+                self.last_round_winner = "player2"
+            self.player1_score += hider_score
+            self.player2_score -= game_result
+        else:
+            if game_result > 0:  # Hider wins
+                self.player2_rounds_won += 1
+                self.last_round_winner = "player2"
+            else:  
+      # Seeker wins
+                self.player1_rounds_won += 1
+                self.last_round_winner = "player1"
+            self.player2_score += hider_score
+            self.player1_score -= game_result
+        self.round += 1
+        return self.last_computer_move
+
     def proximity(self):
         for i in range(self.N**2):
             row = i//self.N
@@ -278,50 +292,107 @@ class Game:
         print(f"Game value: {self.game_value}")
 
     def human_turn(self, i, j):
+      # Record human move
+        self.last_human_move = (i, j)
+      # Convert 2D coordinates to 1D index
+        human_index = i * self.N + j
+      # Determine if human is hider or seeker and set appropriate indices
         if self.is_player1_hider:
-            row1 = i * self.N + j
+            hider_index = human_index
+      # Get computer's move (seeker)
+            seeker_row, seeker_col = self.randimazePlayer(2)
+            self.last_computer_move = (seeker_row, seeker_col)
+            seeker_index = seeker_row * self.N + seeker_col
         else:
-            column1 = i * self.N + j
-
-        non_zero_indices = [idx for idx, x in enumerate(self.tmp_player1_prop) if x >= self.smallest_element1]
-        if non_zero_indices:
-            if self.is_player1_hider and row1 in non_zero_indices:
-                self.tmp_player1_prop[row1] -= self.smallest_element1
-            elif not self.is_player1_hider and column1 in non_zero_indices:
-                self.tmp_player1_prop[column1] -= self.smallest_element1
-            self.tmp_player1_prop = [round(x, 6) for x in self.tmp_player1_prop]
-        else:
-            a = np.array(self.player1_prop)
-            b = np.array(self.tmp_player1_prop)
-            self.tmp_player1_prop = (a+b).tolist().copy()
-            non_zero_indices = [idx for idx, x in enumerate(self.tmp_player1_prop) if x >= self.smallest_element1]
-            self.smallest_element1 = min(self.player1_prop[i] for i in non_zero_indices)
-            if self.is_player1_hider and row1 in non_zero_indices:
-                self.tmp_player1_prop[row1] -= self.smallest_element1
-            elif not self.is_player1_hider and column1 in non_zero_indices:
-                self.tmp_player1_prop[column1] -= self.smallest_element1
-
-        row, col = self.randimazePlayer(2)
-        if not self.is_player1_hider:
-            row1 = row * self.N + col
-        else:
-            column1 = row * self.N + col
-
-        if self.is_player1_hider: 
-            if self.game_matrix[row1, column1] > 0:
+            seeker_index = human_index
+      # Get computer's move (hider)
+            hider_row, hider_col = self.randimazePlayer(1)
+            self.last_computer_move = (hider_row, hider_col)
+            hider_index = hider_row * self.N + hider_col
+      # Calculate game outcome
+        game_result = self.game_matrix[hider_index, seeker_index]
+        hider_score = self.hider_matrix[hider_index, seeker_index]
+      # Update scores based on who is hider/seeker
+        if self.is_player1_hider:
+            if game_result > 0:  # Hider wins
                 self.player1_rounds_won += 1
-            else:
+                self.last_round_winner = "player1"
+            else:  
+      # Seeker wins
                 self.player2_rounds_won += 1
-            self.player1_score += self.game_matrix[row1, column1]
-            self.player2_score -= self.game_matrix[row1, column1]   
+                self.last_round_winner = "player2"
+            self.player1_score += hider_score
+            self.player2_score -= game_result
         else:
-            if self.game_matrix[row1, column1] > 0:
+            if game_result > 0:  # Hider wins
                 self.player2_rounds_won += 1
-            else:
+                self.last_round_winner = "player2"
+            else:  
+      # Seeker wins
                 self.player1_rounds_won += 1
-            self.player1_score -= self.game_matrix[row1, column1]
-            self.player2_score += self.game_matrix[row1, column1]
-        self.print_world()
+                self.last_round_winner = "player1"
+            self.player2_score += hider_score
+            self.player1_score -= game_result
+        self.round += 1
+        return self.last_computer_move
+
+    def reset(self):
+        self.player1_score = 0
+        self.player2_score = 0
+        self.player1_rounds_won = 0
+        self.player2_rounds_won = 0
+        self.round = 0
+        self.last_human_move = None
+        self.last_computer_move = None
+        self.start_game()
+
+    def simulation(self, num_rounds=100):
+        results = []
+        for i in range(num_rounds):
+        # Player 1 move
+            player1_row, player1_col = self.randimazePlayer(1)
+            player1_index = player1_row * self.N + player1_col
+# Player 2 move
+            print("player 1 played at ",player1_row,player1_col)
+            player2_row, player2_col = self.randimazePlayer(2)
+            player2_index = player2_row * self.N + player2_col
+            print("player 2 played at ",player2_row,player2_col)
+
+# Determine hider and seeker indices
+        
+            hider_index = player1_index
+            seeker_index = player2_index
+        
+        # Calculate game outcome
+            game_result = self.game_matrix[hider_index, seeker_index]
+            # Determine round winner
+            round_winner = None
+            # Update scores based on who is hider/seeker
+            
+            if game_result > 0:  # Hider wins
+                            self.player1_rounds_won += 1
+                            round_winner = "player1"
+            else:  # Seeker wins
+                            self.player2_rounds_won += 1
+                            round_winner = "player2"
+            self.player1_score += game_result
+            self.player2_score -= game_result
+            
+            self.round += 1
+            self.print_world()
+        # Store round result for visualization
+        # results.append({
+        #                 'round': i + 1,
+        # 'player1_move': (player1_row, player1_col),
+        #                 'player2_move': (player2_row, player2_col),
+        # 'player1_score': self.player1_score,
+        # 'player2_score': self.player2_score,
+        # 'player1_rounds_won': self.player1_rounds_won,
+        # 'player2_rounds_won': self.player2_rounds_won,
+        # 'round_winner': round_winner
+        #             })
+        # return results
+
     def build_test(self):
         self.build()
         print(self.world)
