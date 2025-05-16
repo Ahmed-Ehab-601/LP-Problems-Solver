@@ -1,11 +1,7 @@
-import tkinter as tk
-from tkinter import ttk, messagebox, simpledialog
 import numpy as np
 import random
 from scipy.optimize import linprog
-import matplotlib.pyplot as plt
-from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
-import matplotlib.colors as mcolors
+from tabulate import tabulate
 
 class Game:
     def __init__(self, round_num=0, player1_name="Human", player2_name="Computer", N=4, is_player1_hider=True):
@@ -102,6 +98,12 @@ class Game:
                 difficulty = random.randint(1, 3)  # 1 = easy 2 = neutral  3 = hard
                 self.world[i, j] = self.set_difficulty(difficulty)
                 self.buildRow(i*self.N+j, difficulty)
+    
+    def test_build(self):
+        for i in range(self.N):
+            for j in range(self.N):
+                difficulty = self.get_difficulty(self.world[i, j])  # 1 = easy 2 = neutral  3 = hard
+                self.buildRow(i*self.N+j, difficulty)            
                             
     def buildRow(self, row, difficulty):
         if difficulty == 1:  # Easy
@@ -121,6 +123,14 @@ class Game:
             return "N"  # Neutral
         elif difficulty == 3:
             return "H"  # Hard
+    
+    def get_difficulty(self, difficulty):
+        if difficulty == "E": 
+            return 1  # Easy
+        elif difficulty == "N":
+            return 2  # Neutral
+        elif difficulty == "H":
+            return 3  # Hard    
                                         
     def build_constraint(self, type: str):
         # Set up the coefficient matrix for constraints
@@ -330,7 +340,94 @@ class Game:
             'round_winner': round_winner
                         })
             
+            
        
         return results
+    
+    def tabulate_game_world(self):
+        N = self.N
+        
+        # Create column headers (coordinates)
+        headers = [""]
+        for i in range(N):
+                headers.append(f"{i}")
+        
+        # Create table rows
+        table = []
+        for i in range(N):
+            row = [f"{i}"]
+            for j in range(N):
+                value = self.world[i, j]
+                row.append(value)
+                
+            table.append(row)
+        
+        print(tabulate(table, headers=headers, tablefmt="grid"))
+
+    def tabulate_game_matrix(self):
+        N = self.N
+        
+        # Create column headers (coordinates)
+        headers = ["Position"]
+        for i in range(N):
+            for j in range(N):
+                headers.append(f"({i},{j})")
+        
+        # Create table rows
+        table = []
+        for i in range(N):
+            for j in range(N):
+                row_idx = i * N + j
+                row = [f"({i},{j})"]  # Row label (coordinate)
+                
+                # Add each column value
+                for k in range(N):
+                    for l in range(N):
+                        col_idx = k * N + l
+                        value = self.game_matrix[row_idx, col_idx]
+                        row.append(round(value, 2))
+                
+                table.append(row)
+        
+        print(tabulate(table, headers=headers, tablefmt="grid"))
+
+    def tabulate_probability_vectors(self):
+        N = self.N
+        
+        # Create table headers
+        headers = ["Position", "Hider Prob (x)", "Seeker Prob (y)"]
+        
+        # Build table rows
+        table = []
+        for i in range(N):
+            for j in range(N):
+                idx = i * N + j
+                pos_label = f"({i},{j})"
+                x_prob = round(self.x_prop[idx], 6)
+                y_prob = round(self.y_prop[idx], 6)
+                table.append([pos_label, x_prob, y_prob])
+        
+        # Add game value as a footer
+        result = tabulate(table, headers=headers, tablefmt="grid")
+        result += f"\nGame Value: {round(self.game_value, 6)}"
+        
+        print(result)
 
 
+
+
+
+def game_test():
+    game = Game(N=3)
+    world = [["H","E","E"],
+             ["E","H","E"],["E","E","H"]]
+    game.world = np.array(world,dtype=str)
+    game.test_build()
+    game.proximity()
+    game.calc_probability()
+    game.tabulate_game_world()
+    game.tabulate_game_matrix()
+    game.tabulate_probability_vectors()
+
+
+game_test()    

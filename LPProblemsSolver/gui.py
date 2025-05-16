@@ -258,7 +258,7 @@ class HideAndSeekGUI:
         
         headers = ["Round", "Hider Move", "Seeker Move", "Winner", "Player Score", "Computer Score"]
         for i, header in enumerate(headers):
-            ttk.Label(header_frame, text=header, font=("Arial", 10, "bold"), width=12).grid(row=0, column=i, padx=5)
+            ttk.Label(header_frame, text=header, font=("Arial", 10, "bold"), width=18).grid(row=0, column=i, padx=5)
         
         # Create stats display
         self.stats_label = ttk.Label(
