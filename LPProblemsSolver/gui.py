@@ -7,321 +7,13 @@ import matplotlib.pyplot as plt
 from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
 import matplotlib.colors as mcolors
 
-class Game:
-    def __init__(self, round_num=0, player1_name="Human", player2_name="Computer", N=4, is_player1_hider=True):
-        self.round = round_num
-        self.player1_name = player1_name
-        self.player2_name = player2_name
-        self.player1_score = 0
-        self.player2_score = 0
-        self.player1_rounds_won = 0
-        self.player2_rounds_won = 0
-        self.num_of_places = N**2
-        self.N = N
-        self.is_player1_hider = is_player1_hider
-        self.game_matrix = np.zeros((self.num_of_places, self.num_of_places))
-                
-        self.world = np.full((N, N), "", dtype=str)
-        self.x_prop = [0]*self.num_of_places
-        self.y_prop = [0]*self.num_of_places
-        self.tmp_x_prop = [0]*self.num_of_places
-        self.tmp_y_prop = [0]*self.num_of_places
-        self.smallest_elementx = 0
-        self.smallest_elementy = 0
-        self.game_value = 0
-        
-        # For tracking the last moves
-        self.last_human_move = None
-        self.last_computer_move = None
-        self.last_round_winner = None
-    
-    def randimazePlayer(self, player: int):
-        if player == 1:
-            non_zero_indices = [i for i, x in enumerate(self.tmp_x_prop) if x >= self.smallest_elementx]
-            if non_zero_indices:
-                random_index = random.choice(non_zero_indices)
-                self.tmp_x_prop[random_index] -= self.smallest_elementx
-                self.tmp_x_prop = [round(x, 6) for x in self.tmp_x_prop]
-            else:
-                a = np.array(self.x_prop)
-                b = np.array(self.tmp_x_prop)
-                self.tmp_x_prop = (a+b).tolist()
-                non_zero_indices = [i for i, x in enumerate(self.tmp_x_prop) if x >= self.smallest_elementx]
-                self.smallest_elementx = min(self.x_prop[i] for i in non_zero_indices)
-                random_index = random.choice(non_zero_indices)
-                self.tmp_x_prop[random_index] -= self.smallest_elementx
-        else:
-            non_zero_indices = [i for i, x in enumerate(self.tmp_y_prop) if x >= self.smallest_elementy]
-            if non_zero_indices:
-                random_index = random.choice(non_zero_indices)
-                self.tmp_y_prop[random_index] -= self.smallest_elementy
-                self.tmp_y_prop = [round(x, 6) for x in self.tmp_y_prop]
-            else:
-                a = np.array(self.y_prop)
-                b = np.array(self.tmp_y_prop)
-                self.tmp_y_prop = (a+b).tolist()
-                non_zero_indices = [i for i, x in enumerate(self.tmp_y_prop) if x >= self.smallest_elementy]
-                self.smallest_elementy = min(self.y_prop[i] for i in non_zero_indices)
-                random_index = random.choice(non_zero_indices)
-                self.tmp_y_prop[random_index] -= self.smallest_elementy
-
-        i = random_index // self.N
-        j = random_index % self.N
-        return i, j
-
-    def proximity(self):
-        for i in range(self.N**2):
-            row = i//self.N
-            col = i%self.N
-            # now we have choice let's pen it
-            self.penalty(i, row, col-1, 0.5)
-            self.penalty(i, row, col+1, 0.5)
-            self.penalty(i, row-1, col, 0.5)
-            self.penalty(i, row+1, col, 0.5)
-            
-            self.penalty(i, row, col-2, 0.75)
-            self.penalty(i, row, col+2, 0.75)
-            self.penalty(i, row-2, col, 0.75)
-            self.penalty(i, row+2, col, 0.75)
-            
-            self.penalty(i, row+1, col+1, 0.75)
-            self.penalty(i, row+1, col-1, 0.75)
-            self.penalty(i, row-1, col+1, 0.75)
-            self.penalty(i, row-1, col-1, 0.75)
-            
-            
-    
-    def penalty(self, place, row, col, factor):
-        if col < 0 or col >= self.N or row < 0 or row >= self.N:
-            return
-        self.game_matrix[place, row*self.N+col] *= factor
-        
-    def build(self):
-        for i in range(self.N):
-            for j in range(self.N):
-                difficulty = random.randint(1, 3)  # 1 = easy 2 = neutral  3 = hard
-                self.world[i, j] = self.set_difficulty(difficulty)
-                self.buildRow(i*self.N+j, difficulty)
-                            
-    def buildRow(self, row, difficulty):
-        if difficulty == 1:  # Easy
-            self.game_matrix[row, :] = 2
-            self.game_matrix[row, row] = -1
-        elif difficulty == 2:  # Neutral
-            self.game_matrix[row, :] = 1
-            self.game_matrix[row, row] = -1
-        elif difficulty == 3:  # Hard
-            self.game_matrix[row, :] = 1
-            self.game_matrix[row, row] = -3
-    
-    def set_difficulty(self, difficulty):
-        if difficulty == 1: 
-            return "E"  # Easy
-        elif difficulty == 2:
-            return "N"  # Neutral
-        elif difficulty == 3:
-            return "H"  # Hard
-                                        
-    def build_constraint(self, type: str):
-        # Set up the coefficient matrix for constraints
-        A_ub = np.zeros((self.num_of_places, self.num_of_places + 1))
-        
-        # Fill A_ub with the negated transpose of game_matrix
-        for i in range(self.num_of_places):
-            if(type == "x"):
-                 A_ub[i, :self.num_of_places] = -1 * self.game_matrix[:, i]
-            else:
-                 A_ub[i, :self.num_of_places] = -1 * self.game_matrix[i, :]     
-           
-            A_ub[i, self.num_of_places] = 1  # Coefficient for v
-        
-        # RHS of inequality constraints
-        b_ub = np.zeros(self.num_of_places)
-        
-        # Equality constraint: sum of probabilities = 1
-        A_eq = np.zeros((1, self.num_of_places + 1))
-        A_eq[0, :self.num_of_places] = 1  # Sum of probabilities
-        A_eq[0, self.num_of_places] = 0   # v doesn't participate in this constraint
-        b_eq = np.array([1])  # Sum equals 1
-        
-        # Objective: maximize v (or minimize -v)
-        c = np.zeros(self.num_of_places + 1)
-        
-        if(type == "x"):
-            c[self.num_of_places] = -1  # Negative because linprog minimizes
-        else:
-            c[self.num_of_places] = 1  
-        
-        # Bounds: x_i ≥ 0, v is unrestricted
-        bounds = [(0, None) for _ in range(self.num_of_places)] + [(None, None)]
-        
-        return {
-            'c': c,
-            'A_ub': A_ub,
-            'b_ub': b_ub,
-            'A_eq': A_eq,
-            'b_eq': b_eq,
-            'bounds': bounds
-        }
-            
-    def calc_probability(self):
-        # Get the LP parameters
-        x_input = self.build_constraint("x")   
-        x_result = linprog(
-            c=x_input['c'],
-            A_ub=x_input['A_ub'],
-            b_ub=x_input['b_ub'],
-            A_eq=x_input['A_eq'],
-            b_eq=x_input['b_eq'],
-            bounds=x_input['bounds'],
-            method='highs'  # Using HiGHS solver which is more modern and reliable
-        )
-        
-        y_input = self.build_constraint("y")   
-        y_result = linprog(
-            c=x_input['c'],
-            A_ub=y_input['A_ub'],
-            b_ub=y_input['b_ub'],
-            A_eq=y_input['A_eq'],
-            b_eq=y_input['b_eq'],
-            bounds=y_input['bounds'],
-            method='highs'
-        )
-        
-        # Extract solution
-        if x_result.success and y_result.success:
-            # Store the optimal mixed strategy for players
-            self.x_prop = x_result.x[:self.num_of_places]
-            self.y_prop = y_result.x[:self.num_of_places]
-            
-            non_zero_indices = [i for i, x in enumerate(self.x_prop) if x != 0]
-            self.smallest_elementx = min(self.x_prop[i] for i in non_zero_indices) if non_zero_indices else 0
-            
-            non_zero_indices = [i for i, x in enumerate(self.y_prop) if x != 0]
-            self.smallest_elementy = min(self.y_prop[i] for i in non_zero_indices) if non_zero_indices else 0
-            
-            # The optimal value of the game is the negative of the objective value
-            self.game_value = -x_result.fun
-            
-            self.tmp_x_prop = self.x_prop.copy()
-            self.tmp_y_prop = self.y_prop.copy()
-            
-            return True
-        else:
-            print("Failed to find optimal strategy")
-            return False
-
-    def start_game(self):
-        self.build()
-        self.proximity()
-        return self.calc_probability()
-
-    def human_turn(self, i, j):
-      # Record human move
-        self.last_human_move = (i, j)
-      # Convert 2D coordinates to 1D index
-        human_index = i * self.N + j
-      # Determine if human is hider or seeker and set appropriate indices
-        if self.is_player1_hider:
-            hider_index = human_index
-      # Get computer's move (seeker)
-            seeker_row, seeker_col = self.randimazePlayer(2)
-            self.last_computer_move = (seeker_row, seeker_col)
-            seeker_index = seeker_row * self.N + seeker_col
-        else:
-            seeker_index = human_index
-      # Get computer's move (hider)
-            hider_row, hider_col = self.randimazePlayer(1)
-            self.last_computer_move = (hider_row, hider_col)
-            hider_index = hider_row * self.N + hider_col
-      # Calculate game outcome
-        game_result = self.game_matrix[hider_index, seeker_index]
-      # Update scores based on who is hider/seeker
-        if self.is_player1_hider:
-            if game_result > 0:  # Hider wins
-                self.player1_rounds_won += 1
-                self.last_round_winner = "player1"
-            else:  
-      # Seeker wins
-                self.player2_rounds_won += 1
-                self.last_round_winner = "player2"
-            self.player1_score += game_result
-            self.player2_score -= game_result
-        else:
-            if game_result > 0:  # Hider wins
-                self.player2_rounds_won += 1
-                self.last_round_winner = "player2"
-            else:  
-      # Seeker wins
-                self.player1_rounds_won += 1
-                self.last_round_winner = "player1"
-            self.player2_score += game_result
-            self.player1_score -= game_result
-        self.round += 1
-        return self.last_computer_move
-    def reset(self):
-        self.player1_score = 0
-        self.player2_score = 0
-        self.player1_rounds_won = 0
-        self.player2_rounds_won = 0
-        self.round = 0
-        self.last_human_move = None
-        self.last_computer_move = None
-        self.start_game()
-
-    def simulation(self, num_rounds=100):
-        results = []
-        for i in range(num_rounds):
-        # Player 1 move
-            player1_row, player1_col = self.randimazePlayer(1)
-            player1_index = player1_row * self.N + player1_col
-# Player 2 move
-            print("player 1 played at ",player1_row,player1_col)
-            player2_row, player2_col = self.randimazePlayer(2)
-            player2_index = player2_row * self.N + player2_col
-            print("player 2 played at ",player2_row,player2_col)
-
-# Determine hider and seeker indices
-        
-            hider_index = player1_index
-            seeker_index = player2_index
-        
-        # Calculate game outcome
-            game_result = self.game_matrix[hider_index, seeker_index]
-            # Determine round winner
-            round_winner = None
-            # Update scores based on who is hider/seeker
-            
-            if game_result > 0:  # Hider wins
-                            self.player1_rounds_won += 1
-                            round_winner = "player1"
-            else:  # Seeker wins
-                            self.player2_rounds_won += 1
-                            round_winner = "player2"
-            self.player1_score += game_result
-            self.player2_score -= game_result
-            
-            self.round += 1
-            
-       # Store round result for visualization
-        results.append({
-                        'round': i + 1,
-        'player1_move': (player1_row, player1_col),
-                        'player2_move': (player2_row, player2_col),
-        'player1_score': self.player1_score,
-        'player2_score': self.player2_score,
-        'player1_rounds_won': self.player1_rounds_won,
-        'player2_rounds_won': self.player2_rounds_won,
-        'round_winner': round_winner
-                    })
-        return results
-
+from Game import Game
 
 class HideAndSeekGUI:
     def __init__(self, root):
         self.root = root
         self.root.title("Hide & Seek Game")
-        self.root.configure(bg='#f0f0f0')
+        self.root.configure(bg="#DCC6C6")
         self.root.geometry("1200x800")
         
         # Game parameters
@@ -333,29 +25,41 @@ class HideAndSeekGUI:
         # Store the game instance
         self.game = None
         
-        # Create the setup frame
-        self.create_setup_frame()
+        # Create the main notebook (tabbed interface)
+        self.notebook = ttk.Notebook(self.root)
+        self.notebook.pack(fill=tk.BOTH, expand=True)
         
-        # Create the game frame (initially hidden)
-        self.create_game_frame()
+        # Create all tabs
+        self.create_setup_tab()
+        self.create_game_tab()
+        self.create_simulation_tab()
+        self.create_matrix_tab()
+        self.create_vectors_tab()
         
-        # Create the strategy frame (initially hidden)
-        self.create_strategy_frame()
-        
-        # Hide game frames initially
-        self.game_frame.pack_forget()
-        self.strategy_frame.pack_forget()
+        # Initially disable all tabs except setup
+        self.disable_all_tabs_except_setup()
     
-    def create_setup_frame(self):
-        self.setup_frame = ttk.Frame(self.root, padding="20")
-        self.setup_frame.pack(pady=20, fill=tk.BOTH, expand=True)
+    def disable_all_tabs_except_setup(self):
+        """Disable all tabs except the setup tab"""
+        for i in range(1, self.notebook.index("end")):
+            self.notebook.tab(i, state="disabled")
+    
+    def enable_all_tabs(self):
+        """Enable all tabs after game starts"""
+        for i in range(self.notebook.index("end")):
+            self.notebook.tab(i, state="normal")
+    
+    def create_setup_tab(self):
+        """Create the setup tab with game configuration options"""
+        self.setup_tab = ttk.Frame(self.notebook)
+        self.notebook.add(self.setup_tab, text="Game Setup")
         
         # Title
-        title_label = ttk.Label(self.setup_frame, text="Hide & Seek Game", font=("Arial", 24, "bold"))
+        title_label = ttk.Label(self.setup_tab, text="Hide & Seek Game", font=("Arial", 24, "bold"))
         title_label.pack(pady=20)
         
         # Create a frame for inputs
-        input_frame = ttk.Frame(self.setup_frame)
+        input_frame = ttk.Frame(self.setup_tab)
         input_frame.pack(pady=10)
         
         # World size input
@@ -407,7 +111,7 @@ class HideAndSeekGUI:
         
         # Start button
         start_button = tk.Button(
-            self.setup_frame, 
+            self.setup_tab, 
             text="Start Game", 
             font=("Arial", 14, "bold"),
             bg="#FF00FF",  # Fuchsia
@@ -422,16 +126,18 @@ class HideAndSeekGUI:
         start_button.bind("<Enter>", lambda e: start_button.config(bg="#CC00CC"))
         start_button.bind("<Leave>", lambda e: start_button.config(bg="#FF00FF"))
     
-    def create_game_frame(self):
-        self.game_frame = ttk.Frame(self.root, padding="10")
+    def create_game_tab(self):
+        """Create the tab for normal game play"""
+        self.game_tab = ttk.Frame(self.notebook)
+        self.notebook.add(self.game_tab, text="Game Play")
         
         # Grid for game world
-        self.world_frame = ttk.Frame(self.game_frame)
-        self.world_frame.grid(row=0, column=0, padx=10, pady=10, sticky="nw")
+        self.world_frame = ttk.Frame(self.game_tab)
+        self.world_frame.pack(side=tk.LEFT, padx=10, pady=10, fill=tk.BOTH, expand=True)
         
         # Frame for scores and stats
-        self.stats_frame = ttk.Frame(self.game_frame)
-        self.stats_frame.grid(row=0, column=1, padx=10, pady=10, sticky="ne")
+        self.stats_frame = ttk.Frame(self.game_tab)
+        self.stats_frame.pack(side=tk.RIGHT, padx=10, pady=10, fill=tk.Y)
         
         # Labels for stats
         self.round_label = ttk.Label(self.stats_frame, text="Round: 0", font=("Arial", 12))
@@ -454,6 +160,9 @@ class HideAndSeekGUI:
         
         self.last_move_label = ttk.Label(self.stats_frame, text="Last Computer Move: None", font=("Arial", 12))
         self.last_move_label.pack(pady=5, anchor="w")
+        
+        self.last_round_result = ttk.Label(self.stats_frame, text="Last Round Result: None", font=("Arial", 12))
+        self.last_round_result.pack(pady=5, anchor="w")
         
         # Buttons
         buttons_frame = ttk.Frame(self.stats_frame)
@@ -479,7 +188,7 @@ class HideAndSeekGUI:
             fg="white",
             padx=10,
             pady=5,
-            command=self.toggle_strategy_view
+            command=lambda: self.notebook.select(self.matrix_tab)
         )
         self.view_strategy_button.pack(side=tk.LEFT, padx=5)
         
@@ -499,30 +208,125 @@ class HideAndSeekGUI:
         for button in [self.reset_button, self.view_strategy_button, self.exit_button]:
             button.bind("<Enter>", lambda e, b=button: b.config(bg="#CC00CC"))
             button.bind("<Leave>", lambda e, b=button: b.config(bg="#FF00FF"))
-    
-    def create_strategy_frame(self):
-        self.strategy_frame = ttk.Frame(self.root, padding="10")
         
-        # Frame for matrix visualization
-        self.matrix_frame = ttk.Frame(self.strategy_frame)
-        self.matrix_frame.pack(pady=10, fill=tk.BOTH, expand=True)
+    def create_simulation_tab(self):
+        """Create the tab for simulation results"""
+        self.simulation_tab = ttk.Frame(self.notebook)
+        self.notebook.add(self.simulation_tab, text="Simulation")
         
-        # Close button for strategy view
-        self.close_strategy_button = tk.Button(
-            self.strategy_frame, 
-            text="Close Strategy View", 
+        # Create a label for the simulation status
+        self.status_label = ttk.Label(
+            self.simulation_tab,
+            text="Simulation not run yet",
+            font=("Arial", 14, "bold")
+        )
+        self.status_label.pack(pady=5)
+        
+        # Create a progress bar
+        self.progress_bar = ttk.Progressbar(
+            self.simulation_tab,
+            orient="horizontal",
+            length=300,
+            mode="determinate"
+        )
+        self.progress_bar.pack(pady=5)
+        
+        # Create a frame with scrollbar for step-by-step results
+        steps_container = ttk.Frame(self.simulation_tab)
+        steps_container.pack(fill=tk.BOTH, expand=True, padx=5, pady=5)
+        
+        # Create canvas with scrollbar
+        self.results_canvas = tk.Canvas(steps_container)
+        scrollbar = ttk.Scrollbar(steps_container, orient="vertical", command=self.results_canvas.yview)
+        self.scrollable_frame = ttk.Frame(self.results_canvas)
+        
+        self.scrollable_frame.bind(
+            "<Configure>",
+            lambda e: self.results_canvas.configure(
+                scrollregion=self.results_canvas.bbox("all")
+            )
+        )
+        
+        self.results_canvas.create_window((0, 0), window=self.scrollable_frame, anchor="nw")
+        self.results_canvas.configure(yscrollcommand=scrollbar.set)
+        
+        self.results_canvas.pack(side="left", fill="both", expand=True)
+        scrollbar.pack(side="right", fill="y")
+        
+        # Create header row
+        header_frame = ttk.Frame(self.scrollable_frame)
+        header_frame.grid(row=0, column=0, sticky="ew", pady=5)
+        
+        headers = ["Round", "Hider Move", "Seeker Move", "Winner", "Player Score", "Computer Score"]
+        for i, header in enumerate(headers):
+            ttk.Label(header_frame, text=header, font=("Arial", 10, "bold"), width=12).grid(row=0, column=i, padx=5)
+        
+        # Create stats display
+        self.stats_label = ttk.Label(
+            self.simulation_tab,
+            text="",
+            font=("Arial", 12)
+        )
+        self.stats_label.pack(pady=10)
+        
+        # Add button to run simulation
+        self.run_sim_button = tk.Button(
+            self.simulation_tab,
+            text="Run Simulation",
             font=("Arial", 12),
             bg="#FF00FF",
             fg="white",
             padx=10,
             pady=5,
-            command=self.toggle_strategy_view
+            command=lambda: self.run_simulation(100)
         )
-        self.close_strategy_button.pack(pady=10)
+        self.run_sim_button.pack(pady=10)
         
         # Add hover effect
-        self.close_strategy_button.bind("<Enter>", lambda e: self.close_strategy_button.config(bg="#CC00CC"))
-        self.close_strategy_button.bind("<Leave>", lambda e: self.close_strategy_button.config(bg="#FF00FF"))
+        self.run_sim_button.bind("<Enter>", lambda e: self.run_sim_button.config(bg="#CC00CC"))
+        self.run_sim_button.bind("<Leave>", lambda e: self.run_sim_button.config(bg="#FF00FF"))
+    def create_matrix_tab(self):
+        """Create the tab for game matrix visualization"""
+        self.matrix_tab = ttk.Frame(self.notebook)
+        self.notebook.add(self.matrix_tab, text="Game Matrix")
+        
+        # Frame for matrix visualization
+        self.matrix_frame = ttk.Frame(self.matrix_tab)
+        self.matrix_frame.pack(fill=tk.BOTH, expand=True, padx=10, pady=10)
+        
+        # Label for when no game is running
+        self.matrix_placeholder = ttk.Label(
+            self.matrix_frame,
+            text="Start a game to view the game matrix",
+            font=("Arial", 12)
+        )
+        self.matrix_placeholder.pack(pady=50)
+    
+    def create_vectors_tab(self):
+        """Create the tab for strategy vectors visualization"""
+        self.vectors_tab = ttk.Frame(self.notebook)
+        self.notebook.add(self.vectors_tab, text="Strategy Vectors")
+        
+        # Frame for X vector
+        self.x_vector_frame = ttk.LabelFrame(self.vectors_tab, text="X Vector (Hider's Strategy)")
+        self.x_vector_frame.pack(pady=10, padx=10, fill=tk.BOTH, expand=True)
+        
+        # Frame for Y vector
+        self.y_vector_frame = ttk.LabelFrame(self.vectors_tab, text="Y Vector (Seeker's Strategy)")
+        self.y_vector_frame.pack(pady=10, padx=10, fill=tk.BOTH, expand=True)
+        
+        # Placeholder labels
+        ttk.Label(
+            self.x_vector_frame,
+            text="Start a game to view the hider's strategy vector",
+            font=("Arial", 10)
+        ).pack(pady=20)
+        
+        ttk.Label(
+            self.y_vector_frame,
+            text="Start a game to view the seeker's strategy vector",
+            font=("Arial", 10)
+        ).pack(pady=20)
     
     def start_game(self):
         # Get game parameters
@@ -543,9 +347,8 @@ class HideAndSeekGUI:
             messagebox.showerror("Error", "Failed to initialize game. Please try again.")
             return
         
-        # Hide setup frame and show game frame
-        self.setup_frame.pack_forget()
-        self.game_frame.pack(fill=tk.BOTH, expand=True)
+        # Enable all tabs
+        self.enable_all_tabs()
         
         # Update the role label
         self.update_role_label()
@@ -553,9 +356,16 @@ class HideAndSeekGUI:
         # Create the world grid
         self.create_world_grid()
         
-        # If simulation mode, run simulation
+        # Switch to game tab or simulation tab based on mode
         if self.is_simulation_mode.get():
-            self.run_simulation()
+            self.notebook.select(self.simulation_tab)
+        else:
+            self.notebook.select(self.game_tab)
+            self.notebook.tab(2, state="disabled")
+        
+        # Update the matrix and vectors tabs
+        self.update_matrix_tab()
+        self.update_vectors_tab()
     
     def create_world_grid(self):
         # Clear previous grid
@@ -610,33 +420,39 @@ class HideAndSeekGUI:
             messagebox.showinfo("Simulation Mode", "Cannot make moves in simulation mode.")
             return
         
+        # Reset all cell borders
+        self.create_world_grid()
+        
         # Make the player's move
         computer_move = self.game.human_turn(row, col)
         
-        # Highlight the human's move
-        self.highlight_cell(row, col, "blue")
+        # Highlight the human's move and computer's move with appropriate colors
+        human_index = row * self.game.N + col
+        comp_row, comp_col = computer_move
+        comp_index = comp_row * self.game.N + comp_col
         
-        # Highlight the computer's move
-        if computer_move:
-            comp_row, comp_col = computer_move
-            self.highlight_cell(comp_row, comp_col, "red")
+        # Determine the winner of the round
+        if self.game.last_round_winner == "player1":
+            # Player won - highlight player's move in blue, computer's in red
+            self.highlight_cell(row, col, "blue", 3)
+            self.highlight_cell(comp_row, comp_col, "red", 1)
+            self.last_round_result.config(text="Last Round Result: You Won!")
+        else:
+            # Computer won - highlight player's move in red, computer's in blue  
+            self.highlight_cell(row, col, "red", 1)
+            self.highlight_cell(comp_row, comp_col, "blue", 3)
+            self.last_round_result.config(text="Last Round Result: Computer Won!")
         
         # Update stats display
         self.update_stats()
-    
-    def highlight_cell(self, row, col, color):
-        # Store the original background color
-        original_bg = self.cells[row][col].cget("bg")
         
-        # Highlight with a border
-        self.cells[row][col].config(highlightbackground=color, highlightthickness=3)
-        
-        # Schedule to remove the highlight after a delay
-        self.root.after(2000, lambda: self.remove_highlight(row, col, original_bg))
+        # Update the matrix and vectors tabs
+        self.update_matrix_tab()
+        self.update_vectors_tab()
     
-    def remove_highlight(self, row, col, original_bg):
-        if hasattr(self, 'cells') and row < len(self.cells) and col < len(self.cells[row]):
-            self.cells[row][col].config(highlightthickness=0)
+    def highlight_cell(self, row, col, color, thickness):
+        # Apply highlight with specified color and thickness
+        self.cells[row][col].config(highlightbackground=color, highlightthickness=thickness)
     
     def update_stats(self):
         # Update the stats labels
@@ -662,44 +478,26 @@ class HideAndSeekGUI:
             self.game.reset()
             self.create_world_grid()
             self.update_stats()
+            self.last_round_result.config(text="Last Round Result: None")
+            
+            # Update the matrix and vectors tabs
+            self.update_matrix_tab()
+            self.update_vectors_tab()
     
     def exit_game(self):
         if messagebox.askyesno("Exit Game", "Are you sure you want to exit the game?"):
             self.root.destroy()
     
-    def toggle_strategy_view(self):
-        if self.strategy_frame.winfo_manager():
-            self.strategy_frame.pack_forget()
-            self.game_frame.pack(fill=tk.BOTH, expand=True)
-        else:
-            self.game_frame.pack_forget()
-            self.strategy_frame.pack(fill=tk.BOTH, expand=True)
-            self.visualize_strategy()
-    
-    def visualize_strategy(self):
-        # Clear previous visualizations
+    def update_matrix_tab(self):
+        """Update the game matrix tab with current data"""
+        # Clear previous content
         for widget in self.matrix_frame.winfo_children():
             widget.destroy()
         
-        # Create tabs for different visualizations
-        notebook = ttk.Notebook(self.matrix_frame)
-        notebook.pack(fill=tk.BOTH, expand=True)
+        if not self.game:
+            ttk.Label(self.matrix_frame, text="No game data available").pack(pady=20)
+            return
         
-        # Create tab for game matrix
-        game_matrix_tab = ttk.Frame(notebook)
-        notebook.add(game_matrix_tab, text="Game Matrix")
-        
-        # Create tab for probabilities
-        probabilities_tab = ttk.Frame(notebook)
-        notebook.add(probabilities_tab, text="Strategy Probabilities")
-        
-        # Visualize the game matrix
-        self.visualize_game_matrix(game_matrix_tab)
-        
-        # Visualize the probabilities
-        self.visualize_probabilities(probabilities_tab)
-    
-    def visualize_game_matrix(self, tab):
         # Create a figure for the game matrix
         fig, ax = plt.subplots(figsize=(10, 8))
         
@@ -740,136 +538,224 @@ class HideAndSeekGUI:
         fig.tight_layout()
         
         # Create a canvas to display the figure
-        canvas = FigureCanvasTkAgg(fig, master=tab)
+        canvas = FigureCanvasTkAgg(fig, master=self.matrix_frame)
         canvas.draw()
         canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
     
-    def visualize_probabilities(self, tab):
-        # Create figure for probabilities
-        fig, (ax1, ax2) = plt.subplots(1, 2, figsize=(12, 6))
+    def update_vectors_tab(self):
+        """Update the strategy vectors tab with current data"""
+        # Clear previous content
+        for widget in self.x_vector_frame.winfo_children():
+            widget.destroy()
+        for widget in self.y_vector_frame.winfo_children():
+            widget.destroy()
         
-        # Prepare data for hider's probabilities
-        hider_probs = self.game.x_prop if self.game.is_player1_hider else self.game.y_prop
-        hider_labels = [f"({i//self.game.N},{i%self.game.N})" for i in range(self.game.num_of_places)]
+        if not self.game:
+            ttk.Label(self.x_vector_frame, text="No game data available").pack(pady=20)
+            ttk.Label(self.y_vector_frame, text="No game data available").pack(pady=20)
+            return
         
-        # Prepare data for seeker's probabilities
-        seeker_probs = self.game.y_prop if self.game.is_player1_hider else self.game.x_prop
-        seeker_labels = [f"({i//self.game.N},{i%self.game.N})" for i in range(self.game.num_of_places)]
+        # Display X vector with indices
+        self.create_vector_display(self.x_vector_frame, self.game.x_prop, "Hider's Strategy (X Vector)")
         
-        # Plot hider's probabilities
-        ax1.bar(hider_labels, hider_probs, color='green')
-        ax1.set_title("Hider's Strategy Probabilities")
-        ax1.set_xlabel("Position (row,col)")
-        ax1.set_ylabel("Probability")
+        # Display Y vector with indices
+        self.create_vector_display(self.y_vector_frame, self.game.y_prop, "Seeker's Strategy (Y Vector)")
+
+    def create_vector_display(self, parent_frame, vector, title):
+        """Create a display for a strategy vector"""
+        # Update the frame title
+        parent_frame.config(text=title)
         
-        # Rotate labels for better readability
-        plt.setp(ax1.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+        # Create a canvas with horizontal scrollbar
+        canvas = tk.Canvas(parent_frame)
+        h_scrollbar = ttk.Scrollbar(parent_frame, orient="horizontal", command=canvas.xview)
         
-        # Plot seeker's probabilities
-        ax2.bar(seeker_labels, seeker_probs, color='red')
-        ax2.set_title("Seeker's Strategy Probabilities")
-        ax2.set_xlabel("Position (row,col)")
-        ax2.set_ylabel("Probability")
+        # Create a frame inside the canvas to hold the vector elements
+        scrollable_frame = ttk.Frame(canvas)
         
-        # Rotate labels for better readability
-        plt.setp(ax2.get_xticklabels(), rotation=45, ha="right", rotation_mode="anchor")
+        scrollable_frame.bind(
+            "<Configure>",
+            lambda e: canvas.configure(scrollregion=canvas.bbox("all"))
+        )
         
-        # Adjust layout
-        fig.tight_layout()
+        canvas.create_window((0, 0), window=scrollable_frame, anchor="nw")
+        canvas.configure(xscrollcommand=h_scrollbar.set)
         
-        # Create a canvas to display the figure
-        canvas = FigureCanvasTkAgg(fig, master=tab)
-        canvas.draw()
-        canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        # Layout for scrolling
+        canvas.pack(side="top", fill="both", expand=True)
+        h_scrollbar.pack(side="bottom", fill="x")
+        
+        # Create three rows for labels (Index, Position, Probability)
+        # Row 0: Headers
+        ttk.Label(scrollable_frame, text="Index", font=("Arial", 10, "bold")).grid(row=0, column=0, padx=5, pady=5)
+        ttk.Label(scrollable_frame, text="Position", font=("Arial", 10, "bold")).grid(row=1, column=0, padx=5, pady=5)
+        ttk.Label(scrollable_frame, text="Probability", font=("Arial", 10, "bold")).grid(row=2, column=0, padx=5, pady=5)
+        
+        # Add vector elements horizontally
+        for i, prob in enumerate(vector):
+            row = i // self.game.N
+            col = i % self.game.N
+            position = f"({row},{col})"
+            
+            # Place elements in columns
+            column_index = i + 1  # +1 because column 0 is used for row headers
+            
+            ttk.Label(scrollable_frame, text=f"{i}", width=5).grid(row=0, column=column_index, padx=5, pady=2)
+            ttk.Label(scrollable_frame, text=position, width=5).grid(row=1, column=column_index, padx=5, pady=2)
+            ttk.Label(scrollable_frame, text=f"{prob:.6f}", width=8).grid(row=2, column=column_index, padx=5, pady=2)
     
-    def run_simulation(self):
-        # Disable buttons during simulation
-        self.reset_button.config(state=tk.DISABLED)
-        self.view_strategy_button.config(state=tk.DISABLED)
+    def run_simulation(self, num_rounds):
+        self.reset_game()
+        """Run the simulation and display results"""
+        # Clear previous results
+        for widget in self.scrollable_frame.winfo_children():
+            if widget.grid_info()["row"] > 0:  # Keep header row
+                widget.destroy()
+        
+        # Reset the game if needed
+        if not self.game:
+            self.start_game()
+        
+        # Disable button during simulation
+        self.run_sim_button.config(state=tk.DISABLED)
+        self.status_label.config(text=f"Running Simulation... Round 0/{num_rounds}")
+        self.progress_bar["value"] = 0
+        self.root.update()
+        
+        # Determine which player is hider and seeker
+        player_is_hider = self.game.is_player1_hider
         
         # Run the simulation
-        results = self.game.simulation(num_rounds=100)
+        results = []
+        for current_round in range(num_rounds):
+            # Update progress
+            progress = ((current_round + 1) / num_rounds) * 100
+            self.progress_bar["value"] = progress
+            self.status_label.config(text=f"Running Simulation... Round {current_round+1}/{num_rounds}")
+            self.root.update()
+            
+            # Run a single round of simulation
+            # Player 1 move
+            player1_row, player1_col = self.game.randimazePlayer(1)
+            player1_index = player1_row * self.game.N + player1_col
+            
+            # Player 2 move
+            player2_row, player2_col = self.game.randimazePlayer(2)
+            player2_index = player2_row * self.game.N + player2_col
+            
+            # Determine hider and seeker indices
+            if player_is_hider:
+                hider_index = player1_index
+                seeker_index = player2_index
+            else:
+                hider_index = player2_index
+                seeker_index = player1_index
+            
+            # Calculate game outcome
+            game_result = self.game.game_matrix[hider_index, seeker_index]
+            
+            # Determine round winner
+            round_winner = None
+            
+            # Update scores based on who is hider/seeker
+            if (player_is_hider and game_result > 0) or (not player_is_hider and game_result <= 0):
+                self.game.player1_rounds_won += 1
+                round_winner = "player1"
+            else:
+                self.game.player2_rounds_won += 1
+                round_winner = "player2"
+                
+            self.game.player1_score += game_result if player_is_hider else -game_result
+            self.game.player2_score -= game_result if player_is_hider else -game_result
+            
+            self.game.round += 1
+            
+            # Create a result dictionary
+            result = {
+                'round': current_round + 1,
+                'player1_move': (player1_row, player1_col),
+                'player2_move': (player2_row, player2_col),
+                'player1_score': self.game.player1_score,
+                'player2_score': self.game.player2_score,
+                'player1_rounds_won': self.game.player1_rounds_won,
+                'player2_rounds_won': self.game.player2_rounds_won,
+                'round_winner': round_winner
+            }
+            
+            results.append(result)
+            
+            # Add this result to the display
+            self.add_result_to_display(result, current_round + 1, player_is_hider)
+            
+            # Update stats
+            self.update_stats_display()
         
-        # Update stats
-        self.update_stats()
+        # Simulation complete
+        self.progress_bar["value"] = 100
+        self.status_label.config(text="Simulation Complete!")
+        self.run_sim_button.config(state=tk.NORMAL)
         
-        # Enable buttons
-        self.reset_button.config(state=tk.NORMAL)
-        self.view_strategy_button.config(state=tk.NORMAL)
+        # Display summary
+        summary = f"Final Results:\n" \
+                f"{self.game.player1_name} Score: {self.game.player1_score}\n" \
+                f"{self.game.player2_name} Score: {self.game.player2_score}\n\n" \
+                f"{self.game.player1_name} Rounds Won: {self.game.player1_rounds_won}\n" \
+                f"{self.game.player2_name} Rounds Won: {self.game.player2_rounds_won}"
         
-        # Show summary
-        summary = f"Simulation Results:\n\n" \
-                 f"{self.game.player1_name} Score: {self.game.player1_score}\n" \
-                 f"{self.game.player2_name} Score: {self.game.player2_score}\n\n" \
-                 f"{self.game.player1_name} Rounds Won: {self.game.player1_rounds_won}\n" \
-                 f"{self.game.player2_name} Rounds Won: {self.game.player2_rounds_won}"
+        self.stats_label.config(text=summary)
         
-        messagebox.showinfo("Simulation Complete", summary)
-        
-        # Create a detailed results window
-        self.show_simulation_results(results)
+        # Update the matrix and vectors tabs
+        self.update_matrix_tab()
+        self.update_vectors_tab()
     
-    def show_simulation_results(self, results):
-        # Create a new window for detailed results
-        results_window = tk.Toplevel(self.root)
-        results_window.title("Simulation Detailed Results")
-        results_window.geometry("800x600")
+    def add_result_to_display(self, result, row_num, player_is_hider):
+        # Create a frame for this result
+        round_frame = ttk.Frame(self.scrollable_frame)
+        round_frame.grid(row=row_num, column=0, sticky="ew", pady=2)
         
-        # Create a figure for the score progression
-        fig, (ax1, ax2) = plt.subplots(2, 1, figsize=(10, 8))
+        # Round number
+        ttk.Label(round_frame, text=str(result['round']), width=12).grid(row=0, column=0, padx=5)
         
-        # Extract data for plotting
-        rounds = [r['round'] for r in results]
-        player1_scores = [r['player1_score'] for r in results]
-        player2_scores = [r['player2_score'] for r in results]
-        player1_wins = [r['player1_rounds_won'] for r in results]
-        player2_wins = [r['player2_rounds_won'] for r in results]
+        # Hider move
+        if player_is_hider:
+            hider_move = result['player1_move']
+        else:
+            hider_move = result['player2_move']
+        ttk.Label(round_frame, text=f"({hider_move[0]},{hider_move[1]})", width=12).grid(row=0, column=1, padx=5)
         
-        # Plot score progression
-        ax1.plot(rounds, player1_scores, 'b-', label=f"{self.game.player1_name} Score")
-        ax1.plot(rounds, player2_scores, 'r-', label=f"{self.game.player2_name} Score")
-        ax1.set_title("Score Progression")
-        ax1.set_xlabel("Round")
-        ax1.set_ylabel("Score")
-        ax1.legend()
-        ax1.grid(True)
+        # Seeker move
+        if player_is_hider:
+            seeker_move = result['player2_move']
+        else:
+            seeker_move = result['player1_move']
+        ttk.Label(round_frame, text=f"({seeker_move[0]},{seeker_move[1]})", width=12).grid(row=0, column=2, padx=5)
         
-        # Plot rounds won progression
-        ax2.plot(rounds, player1_wins, 'b-', label=f"{self.game.player1_name} Rounds Won")
-        ax2.plot(rounds, player2_wins, 'r-', label=f"{self.game.player2_name} Rounds Won")
-        ax2.set_title("Rounds Won Progression")
-        ax2.set_xlabel("Round")
-        ax2.set_ylabel("Rounds Won")
-        ax2.legend()
-        ax2.grid(True)
+        # Winner
+        winner_text = self.game.player1_name if result['round_winner'] == "player1" else self.game.player2_name
+        ttk.Label(round_frame, text=winner_text, width=12).grid(row=0, column=3, padx=5)
         
-        # Adjust layout
-        fig.tight_layout()
+        # Player score
+        ttk.Label(round_frame, text=str(result['player1_score']), width=12).grid(row=0, column=4, padx=5)
         
-        # Create a canvas to display the figure
-        canvas = FigureCanvasTkAgg(fig, master=results_window)
-        canvas.draw()
-        canvas.get_tk_widget().pack(fill=tk.BOTH, expand=True)
+        # Computer score
+        ttk.Label(round_frame, text=str(result['player2_score']), width=12).grid(row=0, column=5, padx=5)
         
-        # Add a close button
-        close_button = tk.Button(
-            results_window,
-            text="Close",
-            font=("Arial", 12),
-            bg="#FF00FF",
-            fg="white",
-            padx=10,
-            pady=5,
-            command=results_window.destroy
-        )
-        close_button.pack(pady=10)
+        # Autoscroll to show the latest entry
+        self.results_canvas.yview_moveto(1.0)
+
+    def update_stats_display(self):
+        # Update the stats display during simulation
+        stats_text = f"Current Status:\n" \
+                    f"{self.game.player1_name} Score: {self.game.player1_score}\n" \
+                    f"{self.game.player2_name} Score: {self.game.player2_score}\n\n" \
+                    f"{self.game.player1_name} Rounds Won: {self.game.player1_rounds_won}\n" \
+                    f"{self.game.player2_name} Rounds Won: {self.game.player2_rounds_won}"
         
-        # Add hover effect
-        close_button.bind("<Enter>", lambda e: close_button.config(bg="#CC00CC"))
-        close_button.bind("<Leave>", lambda e: close_button.config(bg="#FF00FF"))
+        self.stats_label.config(text=stats_text)
+
 
 
 if __name__ == "__main__":
     root = tk.Tk()
     app = HideAndSeekGUI(root)
-    root.mainloop()
+    root.mainloop()        

@@ -1,10 +1,14 @@
-from sympy import Matrix, pprint
-import random
-
-from scipy.optimize import linprog
+import tkinter as tk
+from tkinter import ttk, messagebox, simpledialog
 import numpy as np
+import random
+from scipy.optimize import linprog
+import matplotlib.pyplot as plt
+from matplotlib.backends.backend_tkagg import FigureCanvasTkAgg
+import matplotlib.colors as mcolors
+
 class Game:
-    def __init__(self, round_num = 0, player1_name="player1", player2_name="player2", N=2, is_player1_hider=True):
+    def __init__(self, round_num=0, player1_name="Human", player2_name="Computer", N=4, is_player1_hider=True):
         self.round = round_num
         self.player1_name = player1_name
         self.player2_name = player2_name
@@ -12,129 +16,73 @@ class Game:
         self.player2_score = 0
         self.player1_rounds_won = 0
         self.player2_rounds_won = 0
-        self.num_of_places=N**2
+        self.num_of_places = N**2
         self.N = N
         self.is_player1_hider = is_player1_hider
-        self.game_matrix = np.zeros((self.num_of_places,self.num_of_places))
-        
-        self.world = np.full((N,N),"",dtype=str)
-        self.player1_prop=[0]*self.num_of_places
-        self.player2_prop=[0]*self.num_of_places
-        self.tmp_player1_prop = [0]*self.num_of_places
-        self.tmp_player2_prop = [0]*self.num_of_places
-        self.smallest_element1 = 0
-        self.smallest_element2 = 0
+        self.game_matrix = np.zeros((self.num_of_places, self.num_of_places))
+                
+        self.world = np.full((N, N), "", dtype=str)
+        self.x_prop = [0]*self.num_of_places
+        self.y_prop = [0]*self.num_of_places
+        self.tmp_x_prop = [0]*self.num_of_places
+        self.tmp_y_prop = [0]*self.num_of_places
+        self.smallest_elementx = 0
+        self.smallest_elementy = 0
         self.game_value = 0
         
+        # For tracking the last moves
         self.last_human_move = None
         self.last_computer_move = None
         self.last_round_winner = None
     
     def randimazePlayer(self, player: int):
         if player == 1:
-            non_zero_indices = [i for i, x in enumerate(self.tmp_player1_prop) if x >= self.smallest_element1]
+            non_zero_indices = [i for i, x in enumerate(self.tmp_x_prop) if x >= self.smallest_elementx]
             if non_zero_indices:
                 random_index = random.choice(non_zero_indices)
-                self.tmp_player1_prop[random_index] -= self.smallest_element1
-                self.tmp_player1_prop = [round(x, 6) for x in self.tmp_player1_prop]
+                self.tmp_x_prop[random_index] -= self.smallest_elementx
+                self.tmp_x_prop = [round(x, 6) for x in self.tmp_x_prop]
             else:
-                a = np.array(self.player1_prop)
-                b = np.array(self.tmp_player1_prop)
-                self.tmp_player1_prop = (a+b).tolist()
-                non_zero_indices = [i for i, x in enumerate(self.tmp_player1_prop) if x >= self.smallest_element1]
-                self.smallest_element1 = min(self.player1_prop[i] for i in non_zero_indices)
+                a = np.array(self.x_prop)
+                b = np.array(self.tmp_x_prop)
+                self.tmp_x_prop = (a+b).tolist()
+                non_zero_indices = [i for i, x in enumerate(self.tmp_x_prop) if x >= self.smallest_elementx]
+                self.smallest_elementx = min(self.x_prop[i] for i in non_zero_indices)
                 random_index = random.choice(non_zero_indices)
-                self.tmp_player1_prop[random_index] -= self.smallest_element1
+                self.tmp_x_prop[random_index] -= self.smallest_elementx
         else:
-            non_zero_indices = [i for i, x in enumerate(self.tmp_player2_prop) if x >= self.smallest_element2]
+            non_zero_indices = [i for i, x in enumerate(self.tmp_y_prop) if x >= self.smallest_elementy]
             if non_zero_indices:
                 random_index = random.choice(non_zero_indices)
-                self.tmp_player2_prop[random_index] -= self.smallest_element2
-                self.tmp_player2_prop = [round(x, 6) for x in self.tmp_player2_prop]
+                self.tmp_y_prop[random_index] -= self.smallest_elementy
+                self.tmp_y_prop = [round(x, 6) for x in self.tmp_y_prop]
             else:
-                a = np.array(self.player2_prop)
-                b = np.array(self.tmp_player2_prop)
-                self.tmp_player2_prop = (a+b).tolist()
-                non_zero_indices = [i for i, x in enumerate(self.tmp_player2_prop) if x >= self.smallest_element2]
-                self.smallest_element2 = min(self.player2_prop[i] for i in non_zero_indices)
+                a = np.array(self.y_prop)
+                b = np.array(self.tmp_y_prop)
+                self.tmp_y_prop = (a+b).tolist()
+                non_zero_indices = [i for i, x in enumerate(self.tmp_y_prop) if x >= self.smallest_elementy]
+                self.smallest_elementy = min(self.y_prop[i] for i in non_zero_indices)
                 random_index = random.choice(non_zero_indices)
-                self.tmp_player2_prop[random_index] -= self.smallest_element2
+                self.tmp_y_prop[random_index] -= self.smallest_elementy
 
         i = random_index // self.N
         j = random_index % self.N
         return i, j
-
-
-    def print_world(self):
-        pprint(self.world)
-        print("player 1 score: ")
-        print(self.player1_score)
-        print("vs player 2 score: ")
-        print(self.player2_score)
-        print("\n")
-        print("player 1 prop: ")
-        pprint(self.tmp_player1_prop)
-        print("player 2 prop: ")
-        pprint(self.tmp_player2_prop)      
-    def human_turn(self, i, j):
-      # Record human move
-        self.last_human_move = (i, j)
-      # Convert 2D coordinates to 1D index
-        human_index = i * self.N + j
-      # Determine if human is hider or seeker and set appropriate indices
-        if self.is_player1_hider:
-            hider_index = human_index
-      # Get computer's move (seeker)
-            seeker_row, seeker_col = self.randimazePlayer(2)
-            self.last_computer_move = (seeker_row, seeker_col)
-            seeker_index = seeker_row * self.N + seeker_col
-        else:
-            seeker_index = human_index
-      # Get computer's move (hider)
-            hider_row, hider_col = self.randimazePlayer(1)
-            self.last_computer_move = (hider_row, hider_col)
-            hider_index = hider_row * self.N + hider_col
-      # Calculate game outcome
-        game_result = self.game_matrix[hider_index, seeker_index]
-        hider_score = self.hider_matrix[hider_index, seeker_index]
-      # Update scores based on who is hider/seeker
-        if self.is_player1_hider:
-            if game_result > 0:  # Hider wins
-                self.player1_rounds_won += 1
-                self.last_round_winner = "player1"
-            else:  
-      # Seeker wins
-                self.player2_rounds_won += 1
-                self.last_round_winner = "player2"
-            self.player1_score += hider_score
-            self.player2_score -= game_result
-        else:
-            if game_result > 0:  # Hider wins
-                self.player2_rounds_won += 1
-                self.last_round_winner = "player2"
-            else:  
-      # Seeker wins
-                self.player1_rounds_won += 1
-                self.last_round_winner = "player1"
-            self.player2_score += hider_score
-            self.player1_score -= game_result
-        self.round += 1
-        return self.last_computer_move
 
     def proximity(self):
         for i in range(self.N**2):
             row = i//self.N
             col = i%self.N
             # now we have choice let's pen it
-            self.penalty(i,row,col-1,0.5)
-            self.penalty(i,row,col+1,0.5)
-            self.penalty(i,row-1,col,0.5)
-            self.penalty(i,row+1,col,0.5)
+            self.penalty(i, row, col-1, 0.5)
+            self.penalty(i, row, col+1, 0.5)
+            self.penalty(i, row-1, col, 0.5)
+            self.penalty(i, row+1, col, 0.5)
             
-            self.penalty(i,row,col-2,0.75)
-            self.penalty(i,row,col+2,0.75)
-            self.penalty(i,row-2,col,0.75)
-            self.penalty(i,row+2,col,0.75)
+            self.penalty(i, row, col-2, 0.75)
+            self.penalty(i, row, col+2, 0.75)
+            self.penalty(i, row-2, col, 0.75)
+            self.penalty(i, row+2, col, 0.75)
             
             self.penalty(i, row+1, col+1, 0.75)
             self.penalty(i, row+1, col-1, 0.75)
@@ -142,54 +90,40 @@ class Game:
             self.penalty(i, row-1, col-1, 0.75)
             
             
-            
     
-    def penalty(self,place,row,col,factor):
+    def penalty(self, place, row, col, factor):
         if col < 0 or col >= self.N or row < 0 or row >= self.N:
             return
-        self.game_matrix[place,row*self.N+col] *= factor
+        self.game_matrix[place, row*self.N+col] *= factor
         
-                
     def build(self):
         for i in range(self.N):
             for j in range(self.N):
-                difficulty = random.randint(1,3) # 1 = easy 2 = neutral  3 = hard
-                self.world[i,j] = self.set_difficulty(difficulty)
-                self.buildRow(i*self.N+j,difficulty)
-        
-        self.game_matrix = self.game_matrix.copy()
+                difficulty = random.randint(1, 3)  # 1 = easy 2 = neutral  3 = hard
+                self.world[i, j] = self.set_difficulty(difficulty)
+                self.buildRow(i*self.N+j, difficulty)
                             
-    def buildRow(self,row,difficulty):
-        if difficulty == 1 : 
-            self.game_matrix[row,:] = 2
-            self.game_matrix[row,row] = -1
-        elif difficulty == 2 :
-            self.game_matrix[row,:] = 1
-            self.game_matrix[row,row] = -1
-        elif difficulty == 3 :
-            self.game_matrix[row,:] = 1
-            self.game_matrix[row,row] = -3
+    def buildRow(self, row, difficulty):
+        if difficulty == 1:  # Easy
+            self.game_matrix[row, :] = 2
+            self.game_matrix[row, row] = -1
+        elif difficulty == 2:  # Neutral
+            self.game_matrix[row, :] = 1
+            self.game_matrix[row, row] = -1
+        elif difficulty == 3:  # Hard
+            self.game_matrix[row, :] = 1
+            self.game_matrix[row, row] = -3
     
-    def set_difficulty(self,difficulty):
-        if difficulty == 1 : 
-           return "E"
-        elif difficulty == 2 :
-            return "N"
-        elif difficulty == 3 :
-            return "H"
+    def set_difficulty(self, difficulty):
+        if difficulty == 1: 
+            return "E"  # Easy
+        elif difficulty == 2:
+            return "N"  # Neutral
+        elif difficulty == 3:
+            return "H"  # Hard
                                         
-        
-    def build_constraint(self,type:str):
-        # We'll replace this with code that builds matrices for scipy.optimize.linprog
-        # Instead of returning a custom Input object
-        
-        # For player 1's strategy, we want to maximize v subject to:
-        # -A^T x + v ≤ 0
-        # sum(x) = 1
-        # x ≥ 0
-        
+    def build_constraint(self, type: str):
         # Set up the coefficient matrix for constraints
-        # Each column in game_matrix becomes a row constraint
         A_ub = np.zeros((self.num_of_places, self.num_of_places + 1))
         
         # Fill A_ub with the negated transpose of game_matrix
@@ -211,12 +145,12 @@ class Game:
         b_eq = np.array([1])  # Sum equals 1
         
         # Objective: maximize v (or minimize -v)
-        # All other variables have 0 coefficient in objective
         c = np.zeros(self.num_of_places + 1)
+        
         if(type == "x"):
             c[self.num_of_places] = -1  # Negative because linprog minimizes
-        else :
-            c[self.num_of_places] = 1
+        else:
+            c[self.num_of_places] = 1  
         
         # Bounds: x_i ≥ 0, v is unrestricted
         bounds = [(0, None) for _ in range(self.num_of_places)] + [(None, None)]
@@ -254,42 +188,33 @@ class Game:
             method='highs'
         )
         
-        print(f"Optimization status: {x_result.message}")
-        print(f"Optimization status: {y_result.message}")
-        
         # Extract solution
-        if x_result.success:
-            # Store the optimal mixed strategy for player 1
-            self.player1_prop = x_result.x[:self.num_of_places]
-            self.player2_prop = y_result.x[:self.num_of_places]
+        if x_result.success and y_result.success:
+            # Store the optimal mixed strategy for players
+            self.x_prop = x_result.x[:self.num_of_places]
+            self.y_prop = y_result.x[:self.num_of_places]
             
-            non_zero_indices = [i for i, x in enumerate(self.player1_prop) if x != 0]
-            self.smallest_element1 = min(self.player1_prop[i] for i in non_zero_indices)
+            non_zero_indices = [i for i, x in enumerate(self.x_prop) if x != 0]
+            self.smallest_elementx = min(self.x_prop[i] for i in non_zero_indices) if non_zero_indices else 0
             
-            non_zero_indices = [i for i, x in enumerate(self.player2_prop) if x != 0]
-            self.smallest_element2 = min(self.player2_prop[i] for i in non_zero_indices)
+            non_zero_indices = [i for i, x in enumerate(self.y_prop) if x != 0]
+            self.smallest_elementy = min(self.y_prop[i] for i in non_zero_indices) if non_zero_indices else 0
             
-            # The optimal value of the game is the negative of the objective value 
-            # (since we minimized -v)
+            # The optimal value of the game is the negative of the objective value
             self.game_value = -x_result.fun
             
-            # 0.4 0.1 0.3 0.2
+            self.tmp_x_prop = self.x_prop.copy()
+            self.tmp_y_prop = self.y_prop.copy()
             
-            #4
-            
-        
+            return True
         else:
             print("Failed to find optimal strategy")
+            return False
 
     def start_game(self):
         self.build()
         self.proximity()
-        self.calc_probability()
-        print("World",self.world)
-        print("game matrix",self.game_matrix)
-        print("player 1",self.player1_prop)
-        print("player 2",self.player2_prop)
-        print(f"Game value: {self.game_value}")
+        return self.calc_probability()
 
     def human_turn(self, i, j):
       # Record human move
@@ -311,7 +236,6 @@ class Game:
             hider_index = hider_row * self.N + hider_col
       # Calculate game outcome
         game_result = self.game_matrix[hider_index, seeker_index]
-        hider_score = self.hider_matrix[hider_index, seeker_index]
       # Update scores based on who is hider/seeker
         if self.is_player1_hider:
             if game_result > 0:  # Hider wins
@@ -321,7 +245,7 @@ class Game:
       # Seeker wins
                 self.player2_rounds_won += 1
                 self.last_round_winner = "player2"
-            self.player1_score += hider_score
+            self.player1_score += game_result
             self.player2_score -= game_result
         else:
             if game_result > 0:  # Hider wins
@@ -331,11 +255,10 @@ class Game:
       # Seeker wins
                 self.player1_rounds_won += 1
                 self.last_round_winner = "player1"
-            self.player2_score += hider_score
+            self.player2_score += game_result
             self.player1_score -= game_result
         self.round += 1
         return self.last_computer_move
-
     def reset(self):
         self.player1_score = 0
         self.player2_score = 0
@@ -379,34 +302,19 @@ class Game:
             self.player2_score -= game_result
             
             self.round += 1
-            self.print_world()
-        # Store round result for visualization
-        # results.append({
-        #                 'round': i + 1,
-        # 'player1_move': (player1_row, player1_col),
-        #                 'player2_move': (player2_row, player2_col),
-        # 'player1_score': self.player1_score,
-        # 'player2_score': self.player2_score,
-        # 'player1_rounds_won': self.player1_rounds_won,
-        # 'player2_rounds_won': self.player2_rounds_won,
-        # 'round_winner': round_winner
-        #             })
-        # return results
+            # Store round result for visualization
+            results.append({
+                        'round': i + 1,
+        'player1_move': (player1_row, player1_col),
+                        'player2_move': (player2_row, player2_col),
+        'player1_score': self.player1_score,
+        'player2_score': self.player2_score,
+        'player1_rounds_won': self.player1_rounds_won,
+        'player2_rounds_won': self.player2_rounds_won,
+        'round_winner': round_winner
+                    })
+            
+       
+        return results
 
-    def build_test(self):
-        self.build()
-        print(self.world)
-        print(self.game_matrix)
-        self.proximity()
-        print(self.world)
-        print(self.game_matrix)
-    def winner(self):
-        return self.player1_rounds_won > self.player2_rounds_won      
-game = Game()
-game.start_game() 
-game.simulation()
 
-# game.human_turn(0,0)
-# game.human_turn(0,1)
-# game.human_turn(1,0)
-# game.human_turn(1,1)
