@@ -140,10 +140,11 @@ class Game:
         for i in range(self.num_of_places):
             if(type == "x"):
                  A_ub[i, :self.num_of_places] = -1 * self.game_matrix[:, i]
+                 A_ub[i, self.num_of_places] = 1  # Coefficient for v
             else:
-                 A_ub[i, :self.num_of_places] = -1 * self.game_matrix[i, :]     
-           
-            A_ub[i, self.num_of_places] = 1  # Coefficient for v
+                 A_ub[i, :self.num_of_places] = 1 * self.game_matrix[i, :]
+                 A_ub[i, self.num_of_places] = -1  # Coefficient for v
+            
         
         # RHS of inequality constraints
         b_ub = np.zeros(self.num_of_places)
@@ -189,7 +190,7 @@ class Game:
         
         y_input = self.build_constraint("y")   
         y_result = linprog(
-            c=x_input['c'],
+            c=y_input['c'],
             A_ub=y_input['A_ub'],
             b_ub=y_input['b_ub'],
             A_eq=y_input['A_eq'],
@@ -418,9 +419,11 @@ class Game:
 
 
 def game_test():
-    game = Game(N=3)
-    world = [["H","E","E"],
-             ["E","H","E"],["E","E","H"]]
+    game = Game(N=4)
+    world = [["H","H","H","N"],
+             ["E","N","N","H"],
+             ["N","E","N","H"],
+             ["N","H","N","N"]]
     game.world = np.array(world,dtype=str)
     game.test_build()
     game.proximity()
